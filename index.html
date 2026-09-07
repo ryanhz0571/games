@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ryan Games</title>
-  <meta http-equiv="refresh" content="0; url=./snake-game/">
-</head>
-<body>
-  <p>正在打开游戏…如果页面没有跳转，<a href="./snake-game/">点击这里玩贪吃蛇</a>。</p>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1b2a" />
+    <meta
+      name="description"
+      content="Ryan 的浏览器小游戏合集，TypeScript 编写，可安装、可离线游玩。"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E"
+    />
+    <title>Ryan Games 游戏合集</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <p class="kicker">BROWSER GAMES · 打开即玩</p>
+        <h1>RYAN <span>GAMES</span></h1>
+        <p class="sub">
+          用 TypeScript 制作的浏览器小游戏合集。<br />
+          点击卡片直接开玩，也可以安装到桌面、离线畅玩。
+        </p>
+      </header>
+
+      <main class="grid" id="games" aria-label="游戏列表"></main>
+
+      <footer id="footerText">正在检查新版本…</footer>
+    </div>
+
+    <script type="module" src="/src/home.ts"></script>
+  </body>
 </html>

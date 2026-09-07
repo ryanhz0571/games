@@ -1,16 +1,22 @@
 # 🎮 Games — 浏览器小游戏合集
 
-Ryan 的浏览器小游戏合集：全部用纯 HTML、CSS、JavaScript 编写，零依赖、零构建，打开网页即可游玩。项目由 Codex / Claude 辅助制作。
+Ryan 的浏览器小游戏合集：全部使用 **TypeScript** 编写，并通过 **PWA** 增强——可以安装到桌面、离线游玩，每次进入站点会自动检查并更新到最新版本。项目由 Codex / Claude 辅助制作。
 
 ## 在线试玩
 
-GitHub Pages 自动部署，无需安装任何东西，点击即可开始：
-
 | 游戏 | 说明 | 在线地址 |
 | --- | --- | --- |
-| 🐍 SUPER SNAKE 贪吃蛇 | NES 红白机风格经典贪吃蛇 | [开始游戏](https://ryanhz0571.github.io/games/snake-game/) |
+| 🐍 SUPER SNAKE 贪吃蛇 | NES 红白机风格经典贪吃蛇，含本地排行榜 | [开始游戏](https://ryanhz0571.github.io/games/snake-game/) |
 
-仓库站点首页：[ryanhz0571.github.io/games](https://ryanhz0571.github.io/games/)
+游戏大厅：[ryanhz0571.github.io/games](https://ryanhz0571.github.io/games/)
+
+## 技术栈
+
+- **TypeScript**：所有游戏逻辑与共享模块均为严格模式 TS
+- **Vite**：多页面构建、资源内容哈希，保证新版本发布后浏览器能拿到新文件
+- **PWA**：Web App Manifest + Service Worker，支持安装、离线缓存
+- **自动更新**：每次进入页面检查 Service Worker 与版本号，发现新版后大厅自动刷新、游戏内提示手动更新
+- **本地排行榜**：游戏开始前可输入昵称，成绩记录在本地 `localStorage`，每个昵称只保留最高分
 
 ## 游戏列表
 
@@ -24,16 +30,7 @@ GitHub Pages 自动部署，无需安装任何东西，点击即可开始：
 
 - 键盘：方向键或 WASD 控制移动，空格开始 / 暂停
 - 手机：滑动屏幕控制方向，轻点屏幕开始 / 暂停，也可使用页面上的方向键（D-pad）
-- 吃到苹果蛇会变长，分数 +10，速度会逐渐加快
-- 撞到墙壁或咬到自己游戏结束，最高分会保存在本机浏览器中
-
-**游戏特性**
-
-- NES 红白机风格界面：像素字体、扫描线屏幕
-- 8-bit 复古音效，可随时静音
-- 开始 / 暂停 / 重新开始
-- 计分与加速、最高分记录
-- 支持键盘、鼠标和触屏操作
+- 开始前可输入昵称，游戏结束后自动写入本地排行榜
 
 更详细的开发说明见 [snake-game/README.md](snake-game/README.md)。
 
@@ -41,31 +38,41 @@ GitHub Pages 自动部署，无需安装任何东西，点击即可开始：
 
 ```text
 Ryan-Games/
-├── index.html          # 站点首页（自动跳转到最新游戏）
-├── snake-game/         # SUPER SNAKE 贪吃蛇
-│   ├── index.html      # 游戏页面
-│   ├── style.css       # NES 风格样式
-│   ├── game.js         # 游戏逻辑与音效
-│   ├── screenshot.png  # 游戏截图
-│   └── README.md       # 游戏详情
-└── .github/
-    └── workflows/
-        └── pages.yml   # GitHub Pages 自动部署工作流
+├── index.html                  # 游戏大厅首页
+├── src/
+│   ├── home.ts / home.css      # 大厅页面
+│   └── core/
+│       ├── update.ts           # PWA 注册与新版本检查/更新
+│       ├── leaderboard.ts      # 本地排行榜（通用）
+│       ├── player.ts           # 玩家昵称
+│       └── storage.ts          # 本地存储封装
+├── public/
+│   ├── manifest.webmanifest    # PWA 清单
+│   └── icons/                  # 应用图标
+├── snake-game/
+│   ├── index.html              # 游戏页面
+│   ├── style.css               # NES 风格样式
+│   ├── src/main.ts             # 游戏逻辑（TS）
+│   ├── screenshot.png
+│   └── README.md               # 游戏详情
+├── scripts/
+│   ├── sw.template.js          # Service Worker 模板（构建时写入版本号）
+│   └── make-icons.py           # 图标生成脚本
+├── package.json / vite.config.ts / tsconfig.json
+└── .github/workflows/pages.yml # 构建并部署 GitHub Pages
 ```
 
-## 本地运行
+## 本地开发
 
-无需安装任何依赖，任选其一：
+需要 Node.js 与 pnpm：
 
-- 直接双击打开 `snake-game/index.html`
-- 或在本目录启动一个静态服务器：
-
-  ```bash
-  python -m http.server 8000
-  ```
-
-  然后在浏览器访问 <http://localhost:8000>。
+```bash
+pnpm install        # 安装依赖
+pnpm dev            # 本地开发
+pnpm typecheck      # TypeScript 类型检查
+pnpm build          # 生产构建（输出到 dist/）
+```
 
 ## 自动部署
 
-仓库内置 GitHub Actions 工作流 [.github/workflows/pages.yml](.github/workflows/pages.yml)：每次推送 `main` 分支都会自动将整个仓库部署到 GitHub Pages，也可在 Actions 页面手动触发（Run workflow）。
+每次推送 `main` 分支，GitHub Actions 会执行 `pnpm install → pnpm build`，再把 `dist/` 发布到 GitHub Pages；也可以在 Actions 页面手动触发（Run workflow）。

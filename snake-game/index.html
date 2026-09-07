@@ -1,70 +1,115 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUPER SNAKE - 贪吃蛇</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="page">
-    <div class="console">
-      <div class="console-top">
-        <span class="console-brand">SUPER&nbsp;SNAKE</span>
-        <span class="console-led"></span>
-        <span class="console-model">NES·2026</span>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f1d1d" />
+    <meta name="description" content="SUPER SNAKE：NES 风格经典贪吃蛇，含本地排行榜。" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%8D%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <title>SUPER SNAKE - 贪吃蛇</title>
+  </head>
+  <body>
+    <div class="page">
+      <a class="back-link" href="../">← 返回游戏大厅</a>
 
-      <header class="title">
-        <div class="logo">
-          <span class="logo-star">★</span>
-          <h1>SUPER SNAKE</h1>
+      <div class="console">
+        <div class="console-top">
+          <span class="console-brand">SUPER&nbsp;SNAKE</span>
+          <span class="console-led"></span>
+          <span class="console-model">NES·2026</span>
         </div>
-        <p class="subtitle">经典贪吃蛇 · NES 风格</p>
-      </header>
 
-      <div class="hud">
-        <div class="hud-item">
-          <span class="hud-label">SCORE</span>
-          <span id="score" class="hud-value">000000</span>
+        <header class="title">
+          <div class="logo">
+            <span class="logo-star">★</span>
+            <h1>SUPER SNAKE</h1>
+          </div>
+          <p class="subtitle">经典贪吃蛇 · NES 风格</p>
+        </header>
+
+        <div class="hud">
+          <div class="hud-item">
+            <span class="hud-label">SCORE</span>
+            <span id="score" class="hud-value">000000</span>
+          </div>
+          <div class="hud-item">
+            <span class="hud-label">HI-SCORE</span>
+            <span id="hiScore" class="hud-value">000000</span>
+          </div>
         </div>
-        <div class="hud-item">
-          <span class="hud-label">HI-SCORE</span>
-          <span id="hiScore" class="hud-value">000000</span>
+
+        <div class="screen-wrap">
+          <canvas id="game" width="480" height="480"></canvas>
+          <div id="overlay" class="overlay">
+            <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
+            <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
+            <div class="player-row">
+              <label class="player-label" for="playerName">PLAYER</label>
+              <input
+                id="playerName"
+                class="player-input"
+                type="text"
+                maxlength="12"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="输入你的名字"
+              />
+            </div>
+            <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+          </div>
+          <div class="scanlines" aria-hidden="true"></div>
         </div>
-      </div>
 
-      <div class="screen-wrap">
-        <canvas id="game" width="480" height="480"></canvas>
-        <div id="overlay" class="overlay">
-          <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
-          <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
-          <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+        <div class="buttons">
+          <button id="startBtn" class="btn btn-red" type="button">START</button>
+          <button id="pauseBtn" class="btn btn-gray" type="button" disabled>
+            PAUSE
+          </button>
+          <button id="soundBtn" class="btn btn-gray" type="button">
+            SOUND ON
+          </button>
         </div>
-        <div class="scanlines" aria-hidden="true"></div>
+
+        <div class="dpad" aria-label="方向键">
+          <button class="dpad-btn" type="button" data-dir="up" aria-label="上">
+            ▲
+          </button>
+          <button class="dpad-btn" type="button" data-dir="left" aria-label="左">
+            ◀
+          </button>
+          <button class="dpad-btn" type="button" data-dir="down" aria-label="下">
+            ▼
+          </button>
+          <button class="dpad-btn" type="button" data-dir="right" aria-label="右">
+            ▶
+          </button>
+        </div>
+
+        <p class="hint">
+          方向键 / WASD 控制 · 空格 暂停/开始 · 手机上可滑动屏幕或按方向键
+        </p>
       </div>
 
-      <div class="buttons">
-        <button id="startBtn" class="btn btn-red" type="button">START</button>
-        <button id="pauseBtn" class="btn btn-gray" type="button" disabled>PAUSE</button>
-        <button id="soundBtn" class="btn btn-gray" type="button">SOUND ON</button>
-      </div>
-
-      <div class="dpad" aria-label="方向键">
-        <button class="dpad-btn" type="button" data-dir="up" aria-label="上">▲</button>
-        <button class="dpad-btn" type="button" data-dir="left" aria-label="左">◀</button>
-        <button class="dpad-btn" type="button" data-dir="down" aria-label="下">▼</button>
-        <button class="dpad-btn" type="button" data-dir="right" aria-label="右">▶</button>
-      </div>
-
-      <p class="hint">方向键 / WASD 控制 · 空格 暂停/开始 · 手机上可滑动屏幕或按方向键</p>
+      <section class="board-card">
+        <h2 class="board-heading">★ 排行榜 LEADERBOARD ★</h2>
+        <ul id="boardList" class="board-list"></ul>
+        <p id="boardEmpty" class="board-empty">
+          还没有记录，输入名字开始挑战吧
+        </p>
+      </section>
     </div>
-  </div>
 
-  <script src="game.js"></script>
-</body>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
 </html>

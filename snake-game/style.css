@@ -31,6 +31,20 @@ body {
   max-width: 540px;
 }
 
+.back-link {
+  display: inline-block;
+  margin: 0 0 10px 4px;
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.back-link:hover {
+  color: var(--yellow);
+}
+
 .console {
   background: linear-gradient(#dedad1, #c0bcb2);
   border-radius: 18px;
@@ -175,6 +189,43 @@ canvas {
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
 }
 
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 2px solid #57534c;
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.player-label {
+  color: var(--yellow);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.player-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  text-transform: uppercase;
+}
+
+.player-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 8px;
+  text-transform: none;
+}
+
 .overlay-blink {
   color: var(--red);
   font-size: 13px;
@@ -286,6 +337,78 @@ canvas {
   color: #57534c;
   font-size: 7px;
   line-height: 1.9;
+  text-align: center;
+}
+
+.board-card {
+  margin-top: 20px;
+  background: linear-gradient(#dedad1, #c0bcb2);
+  border-radius: 18px;
+  padding: 16px 18px 18px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3), 0 20px 36px rgba(0, 0, 0, 0.3);
+}
+
+.board-heading {
+  color: var(--red);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-align: center;
+  margin: 2px 0 12px;
+}
+
+.board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.board-list li {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--ink);
+  border: 2px solid #57534c;
+  border-radius: 7px;
+  padding: 8px 12px;
+}
+
+.board-list li.mine {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 1px var(--yellow);
+}
+
+.board-rank {
+  color: var(--yellow);
+  font-size: 11px;
+}
+
+.board-rank.top {
+  color: var(--red);
+}
+
+.board-name {
+  color: #fff;
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-score {
+  color: var(--yellow);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.board-empty {
+  margin: 0;
+  padding: 12px 4px 4px;
+  color: #6b675f;
+  font-size: 8px;
+  line-height: 1.8;
   text-align: center;
 }
 
