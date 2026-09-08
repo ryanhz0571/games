@@ -2,13 +2,8 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1f1d1d" />
-    <style>
-      html {
-        background: #4d7ce0;
-      }
-    </style>
     <meta name="description" content="SUPER SNAKE：NES 风格经典贪吃蛇，含本地排行榜。" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link
@@ -28,48 +23,23 @@
     <div class="page">
       <a class="back-link" href="../">← 返回游戏大厅</a>
 
-      <div class="console">
-        <div class="console-top">
-          <span class="console-brand">SUPER&nbsp;SNAKE</span>
-          <span class="console-led"></span>
-          <span class="console-model">NES·2026</span>
+      <div class="mode-row">
+        <div class="mode-toggle" role="group" aria-label="游戏模式">
+          <button id="modeWordBtn" class="mode-btn active" type="button">
+            🅰️ 单词闯关
+          </button>
+          <button id="modeClassicBtn" class="mode-btn" type="button">
+            🍎 经典模式
+          </button>
         </div>
+        <label class="unit-picker" for="unitSelect">
+          <span>词库</span>
+          <select id="unitSelect"></select>
+        </label>
+      </div>
 
-        <header class="title">
-          <div class="logo">
-            <span class="logo-star">★</span>
-            <h1>SUPER SNAKE</h1>
-          </div>
-          <p class="subtitle">经典贪吃蛇 · NES 风格</p>
-        </header>
-
-        <div class="hud">
-          <div class="hud-item">
-            <span class="hud-label">SCORE</span>
-            <span id="score" class="hud-value">000000</span>
-          </div>
-          <div class="hud-item">
-            <span class="hud-label">HI-SCORE</span>
-            <span id="hiScore" class="hud-value">000000</span>
-          </div>
-        </div>
-
-        <div class="mode-row">
-          <div class="mode-toggle" role="group" aria-label="游戏模式">
-            <button id="modeWordBtn" class="mode-btn active" type="button">
-              🅰️ 单词闯关
-            </button>
-            <button id="modeClassicBtn" class="mode-btn" type="button">
-              🍎 经典模式
-            </button>
-          </div>
-          <label class="unit-picker" for="unitSelect">
-            <span>词库</span>
-            <select id="unitSelect"></select>
-          </label>
-        </div>
-
-        <div id="wordBar" class="word-bar">
+      <div class="game-shell">
+        <aside id="wordBar" class="word-bar word-panel">
           <div class="word-question">
             <span class="word-q-title">把蛇引向正确单词：</span>
             <strong id="promptZh" class="word-q-text"></strong>
@@ -78,58 +48,72 @@
           <div id="choiceRow" class="choice-row"></div>
           <p class="word-hint-tip">点击选项可听发音 · 蛇的颜色要和答案对应</p>
           <p id="wordHint" class="word-hint" hidden></p>
-        </div>
+        </aside>
 
-        <div class="screen-wrap">
-          <canvas id="game" width="480" height="480"></canvas>
-          <div id="overlay" class="overlay">
-            <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
-            <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
-            <div class="player-row">
-              <label class="player-label" for="playerName">PLAYER</label>
-              <input
-                id="playerName"
-                class="player-input"
-                type="text"
-                maxlength="12"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="输入你的名字"
-              />
-            </div>
-            <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+        <div class="console">
+          <div class="console-top">
+            <span class="console-brand">SUPER&nbsp;SNAKE</span>
+            <span class="console-led"></span>
+            <span class="console-model">NES·2026</span>
           </div>
-          <div class="scanlines" aria-hidden="true"></div>
-        </div>
 
-        <div class="buttons">
-          <button id="startBtn" class="btn btn-red" type="button">START</button>
-          <button id="pauseBtn" class="btn btn-gray" type="button" disabled>
-            PAUSE
-          </button>
-          <button id="soundBtn" class="btn btn-gray" type="button">
-            SOUND ON
-          </button>
-        </div>
+          <header class="title">
+            <div class="logo">
+              <span class="logo-star">★</span>
+              <h1>SUPER SNAKE</h1>
+            </div>
+            <p class="subtitle">经典贪吃蛇 · NES 风格</p>
+          </header>
 
-        <div class="dpad" aria-label="方向键">
-          <button class="dpad-btn" type="button" data-dir="up" aria-label="上">
-            ▲
-          </button>
-          <button class="dpad-btn" type="button" data-dir="left" aria-label="左">
-            ◀
-          </button>
-          <button class="dpad-btn" type="button" data-dir="down" aria-label="下">
-            ▼
-          </button>
-          <button class="dpad-btn" type="button" data-dir="right" aria-label="右">
-            ▶
-          </button>
-        </div>
+          <div class="hud">
+            <div class="hud-item">
+              <span class="hud-label">SCORE</span>
+              <span id="score" class="hud-value">000000</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">HI-SCORE</span>
+              <span id="hiScore" class="hud-value">000000</span>
+            </div>
+          </div>
 
-        <p class="hint">
-          方向键 / WASD 控制 · 空格 暂停/开始 · 手机上可滑动屏幕或按方向键
-        </p>
+          <div class="screen-wrap">
+            <canvas id="game" width="480" height="480"></canvas>
+            <div id="joyZone" class="joy-zone" aria-hidden="true"></div>
+            <div id="joyBase" class="joy-base">
+              <div id="joyThumb" class="joy-thumb"></div>
+            </div>
+            <div id="overlay" class="overlay">
+              <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
+              <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
+              <div class="player-row">
+                <label class="player-label" for="playerName">PLAYER</label>
+                <input
+                  id="playerName"
+                  class="player-input"
+                  type="text"
+                  maxlength="12"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="输入你的名字"
+                />
+              </div>
+              <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+            </div>
+            <div class="scanlines" aria-hidden="true"></div>
+          </div>
+
+          <div class="buttons">
+            <button id="startBtn" class="btn btn-red" type="button">START</button>
+            <button id="pauseBtn" class="btn btn-gray" type="button" disabled>
+              PAUSE
+            </button>
+            <button id="soundBtn" class="btn btn-gray" type="button">
+              SOUND ON
+            </button>
+          </div>
+
+          <p class="hint">电脑请用 方向键 / WASD 控制 · 空格 暂停/开始</p>
+        </div>
       </div>
 
       <section class="board-card">

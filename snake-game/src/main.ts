@@ -87,6 +87,9 @@ const wordHint = element<HTMLParagraphElement>("wordHint");
 const wordSummaryCard = element<HTMLElement>("wordSummaryCard");
 const wordSummaryList = element<HTMLUListElement>("wordSummaryList");
 const wordSummaryEmpty = element<HTMLParagraphElement>("wordSummaryEmpty");
+const joyZone = element<HTMLDivElement>("joyZone");
+const joyBase = element<HTMLDivElement>("joyBase");
+const joyThumb = element<HTMLDivElement>("joyThumb");
 
 // ---------- 状态 ----------
 let snake: Point[] = [];
@@ -876,36 +879,76 @@ document.addEventListener("keydown", (event) => {
   if (handled) event.preventDefault();
 });
 
-// 手机上滑动控制
-let touchStart: Point | null = null;
-canvas.addEventListener(
+// 手机 / iPad 虚拟摇杆
+let joyOrigin: Point | null = null;
+let joyActive = false;
+let lastJoyDir: Point | null = null;
+
+function showJoystick(x: number, y: number): void {
+  const rect = joyZone.getBoundingClientRect();
+  joyBase.style.left = `${x - rect.left}px`;
+  joyBase.style.top = `${y - rect.top}px`;
+  joyThumb.style.transform = "translate(0px, 0px)";
+  joyBase.classList.add("active");
+}
+
+function hideJoystick(): void {
+  joyBase.classList.remove("active");
+  lastJoyDir = null;
+}
+
+function updateJoystick(dx: number, dy: number): void {
+  const distance = Math.hypot(dx, dy);
+  if (distance < 8) return;
+  if (!joyActive) joyActive = true;
+
+  const maxTravel = 42;
+  const scale = Math.min(maxTravel, distance) / distance;
+  const moveX = dx * scale;
+  const moveY = dy * scale;
+  joyThumb.style.transform = `translate(${moveX}px, ${moveY}px)`;
+
+  const next: Point = {
+    x: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : -1) : 0,
+    y: Math.abs(dx) > Math.abs(dy) ? 0 : dy > 0 ? 1 : -1,
+  };
+  if (!lastJoyDir || lastJoyDir.x !== next.x || lastJoyDir.y !== next.y) {
+    lastJoyDir = next;
+    setDir(next.x, next.y);
+  }
+}
+
+joyZone.addEventListener(
   "touchstart",
   (event) => {
     const touch = event.changedTouches[0];
-    touchStart = { x: touch.clientX, y: touch.clientY };
+    joyOrigin = { x: touch.clientX, y: touch.clientY };
+    joyActive = false;
+    showJoystick(touch.clientX, touch.clientY);
   },
-  { passive: true },
+  { passive: false },
 );
 
-canvas.addEventListener(
-  "touchend",
+joyZone.addEventListener(
+  "touchmove",
   (event) => {
-    if (!touchStart) return;
+    if (!joyOrigin) return;
+    event.preventDefault();
     const touch = event.changedTouches[0];
-    const dx = touch.clientX - touchStart.x;
-    const dy = touch.clientY - touchStart.y;
-    touchStart = null;
-
-    if (Math.abs(dx) < 16 && Math.abs(dy) < 16) {
-      // 轻点屏幕：开始或暂停
-      if (!started || gameOver) startRun();
-      else togglePause();
-      return;
-    }
-    if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
-    else setDir(0, dy > 0 ? 1 : -1);
+    updateJoystick(touch.clientX - joyOrigin.x, touch.clientY - joyOrigin.y);
   },
-  { passive: true },
+  { passive: false },
+);
+
+joyZone.addEventListener(
+  "touchend",
+  () => {
+    joyOrigin = null;
+    hideJoystick();
+    if (!joyActive && running && !gameOver) togglePause();
+    joyActive = false;
+  },
+  { passive: false },
 );
 
 // ---------- 按钮与输入 ----------

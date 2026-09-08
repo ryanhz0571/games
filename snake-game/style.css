@@ -638,6 +638,80 @@ canvas {
   margin-top: 3px;
 }
 
+.dpad {
+  display: none;
+}
+
+.game-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.joy-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  touch-action: none;
+}
+
+.joy-base {
+  position: absolute;
+  width: 108px;
+  height: 108px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: none;
+}
+
+.joy-base.active {
+  display: block;
+}
+
+.joy-thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.overlay {
+  z-index: 4;
+}
+
+@media (pointer: coarse) {
+  .hint,
+  .word-hint-tip {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .page {
+    max-width: 1000px;
+  }
+
+  .game-shell {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .word-panel {
+    flex: 0 0 320px;
+  }
+
+  .console {
+    flex: 1 1 auto;
+  }
+}
+
 @media (max-width: 420px) {
   .console {
     padding: 14px 14px 16px;
