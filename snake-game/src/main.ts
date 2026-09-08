@@ -441,14 +441,8 @@ function tick(): void {
 
   dir = nextDir;
   const head = snake[0];
-  const nx = head.x + dir.x;
-  const ny = head.y + dir.y;
-
-  // 撞墙
-  if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) {
-    gameOverRun();
-    return;
-  }
+  const nx = (head.x + dir.x + GRID) % GRID;
+  const ny = (head.y + dir.y + GRID) % GRID;
 
   const classicHit =
     gameMode === "classic" &&
