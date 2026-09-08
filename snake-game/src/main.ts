@@ -22,6 +22,10 @@ const CELL = 24; // 每格像素
 const START_SPEED = 150; // 初始速度（毫秒/步）
 const MIN_SPEED = 70; // 最快速度
 const SPEED_STEP = 4; // 每吃一个食物加快多少
+const WORD_START_SPEED = 240; // 单词模式给足反应时间
+const WORD_MIN_SPEED = 140;
+const WORD_SPEED_STEP = 3;
+const COUNTDOWN_SECONDS = 15; // 每轮默认倒计时
 
 interface Point {
   x: number;
@@ -77,6 +81,7 @@ const modeClassicBtn = element<HTMLButtonElement>("modeClassicBtn");
 const unitSelect = element<HTMLSelectElement>("unitSelect");
 const wordBar = element<HTMLDivElement>("wordBar");
 const promptZh = element<HTMLSpanElement>("promptZh");
+const wordTimer = element<HTMLSpanElement>("wordTimer");
 const choiceRow = element<HTMLDivElement>("choiceRow");
 const wordHint = element<HTMLParagraphElement>("wordHint");
 const wordSummaryCard = element<HTMLElement>("wordSummaryCard");
@@ -106,6 +111,8 @@ let sessionWords: EnglishWord[] = [];
 let wordQueue: EnglishWord[] = [];
 let lastWord: EnglishWord | null = null;
 let hintTimer: number | null = null;
+let countdownRemaining = COUNTDOWN_SECONDS;
+let countdownTimer: number | null = null;
 
 const COL = {
   bg: "#0e1a2e",
@@ -287,6 +294,56 @@ function tryPlaceWordFood(item: WordFood): boolean {
   return false;
 }
 
+function renderCountdown(): void {
+  wordTimer.textContent = `${Math.max(0, countdownRemaining)}s`;
+  wordTimer.classList.toggle("low", countdownRemaining <= 5);
+}
+
+function stopCountdown(): void {
+  if (countdownTimer !== null) {
+    window.clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function startCountdown(): void {
+  stopCountdown();
+  countdownRemaining = COUNTDOWN_SECONDS;
+  renderCountdown();
+  countdownTimer = window.setInterval(() => {
+    if (!running || paused || gameOver || gameMode !== "word") return;
+    countdownRemaining -= 1;
+    renderCountdown();
+    if (countdownRemaining <= 0) onWordTimeout();
+  }, 1000);
+}
+
+function shrinkSnakeBy(amount: number): void {
+  let remaining = amount;
+  while (remaining > 0 && snake.length > 2) {
+    snake.pop();
+    remaining -= 1;
+  }
+}
+
+function onWordTimeout(): void {
+  if (!running || paused || gameOver || gameMode !== "word") return;
+  stopCountdown();
+  if (wordWave) {
+    flashWordHint(
+      `时间到！${wordWave.target.word} = ${wordWave.target.zh}`,
+      true,
+    );
+  }
+  sfx.wrong();
+  shrinkSnakeBy(2);
+  if (!startWordWave()) {
+    gameOverRun();
+    return;
+  }
+  draw();
+}
+
 function startWordWave(): boolean {
   const unit = currentUnit();
   if (unit.words.length < 3) return false;
@@ -326,6 +383,7 @@ function startWordWave(): boolean {
   promptZh.textContent = `“${target.zh}”`;
   wordHint.hidden = true;
   renderWordChoices();
+  startCountdown();
   return true;
 }
 
@@ -335,6 +393,7 @@ function endGameBecauseFull(): void {
 
 // ---------- 游戏逻辑 ----------
 function reset(): void {
+  stopCountdown();
   snake = [
     { x: 8, y: 10 },
     { x: 7, y: 10 },
@@ -343,7 +402,7 @@ function reset(): void {
   dir = { x: 1, y: 0 };
   nextDir = { x: 1, y: 0 };
   score = 0;
-  speed = START_SPEED;
+  speed = gameMode === "word" ? WORD_START_SPEED : START_SPEED;
   gameOver = false;
   paused = false;
   food = null;
@@ -438,7 +497,7 @@ function tick(): void {
       } else {
         score += 10;
       }
-      speed = Math.max(MIN_SPEED, speed - SPEED_STEP);
+      speed = Math.max(WORD_MIN_SPEED, speed - WORD_SPEED_STEP);
       if (score > hiScore) {
         hiScore = score;
         writeStorage("superSnakeHi", String(hiScore));
@@ -450,7 +509,7 @@ function tick(): void {
         return;
       }
     } else {
-      snake.pop();
+      shrinkSnakeBy(2);
       score = Math.max(0, score - 5);
       sfx.wrong();
       flashWordHint(`${wordHit.word.word} = ${wordHit.word.zh}`, true);
@@ -467,6 +526,7 @@ function tick(): void {
 function gameOverRun(): void {
   gameOver = true;
   running = false;
+  stopCountdown();
   sfx.over();
 
   let recordText = "";
