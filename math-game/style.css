@@ -940,3 +940,128 @@ body {
     width: 100%;
   }
 }
+
+/* ---------- 手机竖屏优化 ---------- */
+@media (max-width: 640px) {
+  .hud {
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .hud-back {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+
+  .hud-title {
+    font-size: 15px;
+  }
+
+  .hud-world {
+    display: none;
+  }
+
+  .hud-stat {
+    min-height: 32px;
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .hud-stat > span:last-child {
+    font-size: 10px;
+  }
+
+  .hud-icon {
+    font-size: 15px;
+  }
+
+  .landing-main {
+    padding: 12px 12px 16px;
+  }
+
+  .mascot {
+    font-size: 40px;
+  }
+
+  .hero-title {
+    font-size: 25px;
+  }
+
+  .lesson {
+    padding: 16px 14px 22px;
+  }
+
+  .question-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+
+  .question-prompt {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .choice {
+    min-height: 54px;
+    padding: 8px 12px;
+    font-size: 17px;
+  }
+
+  .numberline {
+    padding: 6px 2px 24px;
+  }
+
+  .numberline-scale {
+    height: 84px;
+    margin: 0 18px;
+  }
+
+  .numberline-tick-label {
+    top: 16px;
+    font-size: 12px;
+  }
+
+  .numberline-handle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .numberline-bubble {
+    top: -38px;
+    min-width: 40px;
+    padding: 5px 8px;
+    font-size: 16px;
+  }
+
+  .answer-input {
+    width: 120px;
+    min-height: 54px;
+    font-size: 22px;
+  }
+
+  .input-unit {
+    font-size: 18px;
+  }
+
+  .order-chip {
+    min-height: 46px;
+    padding: 8px 14px;
+    font-size: 17px;
+  }
+
+  .controls {
+    padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    min-height: 52px;
+    font-size: 18px;
+  }
+
+  .btn-primary {
+    min-width: 0;
+    width: 100%;
+  }
+}

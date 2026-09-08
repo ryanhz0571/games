@@ -1,12 +1,15 @@
-# 🎮 Games — 浏览器小游戏合集
+# 🎮 初中生学习游戏聚合站
 
-Ryan 的浏览器小游戏合集：全部使用 **TypeScript** 编写，并通过 **PWA** 增强——可以安装到桌面、离线游玩，每次进入站点会自动检查并更新到最新版本。项目由 Codex / Claude 辅助制作。
+这是一个面向**初中生**的学习游戏聚合站，把学科知识点（目前是初一数学）做成游戏化关卡，边玩边学。全部使用 **TypeScript** 编写，并通过 **PWA** 增强——可以安装到桌面、离线游玩，每次进入站点会自动检查并更新到最新版本。
+
+项目由 **Codex 配合 DeepSeek** 共同完成，技术指导来自爸爸。
 
 ## 在线试玩
 
 | 游戏 | 说明 | 在线地址 |
 | --- | --- | --- |
 | 🐍 SUPER SNAKE 贪吃蛇 | NES 红白机风格经典贪吃蛇，含本地排行榜 | [开始游戏](https://ryanhz0571.github.io/games/snake-game/) |
+| 🦊 数字大陆 | 多邻国式初一数学闯关，子关卡、每日打卡、等级系统 | [开始学习](https://ryanhz0571.github.io/games/math-game/) |
 
 游戏大厅：[ryanhz0571.github.io/games](https://ryanhz0571.github.io/games/)
 
@@ -34,6 +37,20 @@ Ryan 的浏览器小游戏合集：全部使用 **TypeScript** 编写，并通�
 
 更详细的开发说明见 [snake-game/README.md](snake-game/README.md)。
 
+### 🦊 数字大陆（初一数学）
+
+一个多邻国式的数学学习游戏，采用任天堂（马力欧）风格。按浙教版初一数学把内容拆成「分组 → 子关卡」，前两课已可玩：
+
+- 第 1 课 · 认识负数
+- 第 2 课 · 数轴与相反数
+
+**学习机制**
+
+- 分组与子关卡：数与运算、代数式、方程、图形与几何，每个分组下再拆子关卡，按顺序解锁
+- 每日连续奖励：每天第一次打开会结算连续打卡并发放金币
+- 等级系统：完成任务获得经验值（XP），每 100 分升一级
+- 多种题型：选择题、数轴拖拽、填空、判断、排序，答错给出苏格拉底式提示
+
 ## 项目结构
 
 ```text
@@ -55,6 +72,15 @@ Ryan-Games/
 │   ├── src/main.ts             # 游戏逻辑（TS）
 │   ├── screenshot.png
 │   └── README.md               # 游戏详情
+├── math-game/
+│   ├── index.html              # 学习大厅（学习路径）
+│   ├── play/index.html         # 做题页
+│   ├── style.css               # 任天堂风格样式
+│   └── src/
+│       ├── home.ts             # 学习大厅逻辑
+│       ├── main.ts             # 做题逻辑
+│       ├── course.ts           # 课程结构
+│       └── progress.ts         # 进度 / 等级 / 打卡
 ├── scripts/
 │   ├── sw.template.js          # Service Worker 模板（构建时写入版本号）
 │   └── make-icons.py           # 图标生成脚本
