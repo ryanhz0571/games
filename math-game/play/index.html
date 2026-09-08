@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#7cc4ff" />
+    <meta
+      name="description"
+      content="数字大陆 · 第一课 认识负数"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="../../manifest.webmanifest" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%8A%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../style.css" />
+    <title>数字大陆 · 第 1 课 · 认识负数</title>
+  </head>
+  <body>
+    <div class="cloud cloud-1" aria-hidden="true"></div>
+    <div class="cloud cloud-2" aria-hidden="true"></div>
+    <div class="ground" aria-hidden="true"></div>
+
+    <div class="app">
+      <header class="hud">
+        <a class="hud-back" href="../" aria-label="返回数字大陆">←</a>
+        <div class="hud-world">WORLD <span>1-1</span></div>
+        <div class="hud-stat hud-streak" title="连续打卡天数">
+          <span class="hud-icon">🔥</span>
+          <span id="streak">0</span>
+        </div>
+        <div class="hud-stat hud-hearts" title="生命值">
+          <span class="hud-icon">❤️</span>
+          <span id="hearts">5</span>
+        </div>
+        <div class="hud-spacer"></div>
+        <div class="hud-stat hud-score" title="得分">
+          <span class="hud-icon">⭐</span>
+          <span id="xp">0</span>
+        </div>
+        <div class="hud-stat hud-coins" title="金币">
+          <span class="hud-icon">🪙</span>
+          <span id="gems">0</span>
+        </div>
+      </header>
+
+      <div class="progress" aria-hidden="true">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <main class="lesson">
+        <p id="lessonTitle" class="lesson-title">第 1 课 · 认识负数</p>
+        <div id="lesson" class="lesson-body"></div>
+      </main>
+
+      <footer class="controls">
+        <button id="submitBtn" class="btn-primary" type="button">检查 ✓</button>
+      </footer>
+    </div>
+
+    <div id="feedback" class="feedback" hidden></div>
+    <div id="overlay" class="overlay" hidden></div>
+
+    <script type="module" src="../src/main.ts"></script>
+  </body>
+</html>

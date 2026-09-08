@@ -50,6 +50,8 @@ export default defineConfig({
       input: {
         home: resolve(process.cwd(), "index.html"),
         snake: resolve(process.cwd(), "snake-game/index.html"),
+        mathHome: resolve(process.cwd(), "math-game/index.html"),
+        mathPlay: resolve(process.cwd(), "math-game/play/index.html"),
       },
     },
   },

@@ -18,6 +18,14 @@ const GAMES: GameInfo[] = [
       "经典贪吃蛇：像素红白机风格、8-bit 音效，支持键盘与触屏，内置本地排行榜。",
     href: "./snake-game/",
   },
+  {
+    emoji: "🦊",
+    name: "数字大陆",
+    tag: "初一数学 · 多邻国式",
+    description:
+      "多邻国式数学闯关：数轴拖拽、天平解方程，先学有理数，iPad 横屏与电脑都能玩。",
+    href: "./math-game/",
+  },
 ];
 
 function buildCards(): void {

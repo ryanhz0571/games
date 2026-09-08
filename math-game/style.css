@@ -1,0 +1,800 @@
+:root {
+  --sky: #7cc4ff;
+  --sky-light: #c2e6ff;
+  --mario-red: #e52521;
+  --mario-red-dark: #b51c1a;
+  --coin: #fbd000;
+  --coin-dark: #c8a300;
+  --star: #ffd900;
+  --pipe-green: #00a800;
+  --pipe-green-dark: #008000;
+  --grass: #67e06a;
+  --brick: #c84c0c;
+  --ink: #3b2f2f;
+  --ink-soft: #6b5d5d;
+  --muted: #8a7f7f;
+  --line: #e5e5e5;
+  --card: #ffffff;
+  --font-pixel: "Press Start 2P", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", "YouYuan",
+    system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky) 0%, var(--sky-light) 72%, #eef9ff 100%);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  overflow: hidden;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---------- 装饰：云与地面 ---------- */
+.cloud {
+  position: fixed;
+  z-index: 0;
+  width: 92px;
+  height: 34px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    22px -16px 0 3px #fff,
+    48px -5px 0 1px #fff;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.cloud-1 {
+  top: 72px;
+  left: 6%;
+  animation: drift 16s ease-in-out infinite;
+}
+
+.cloud-2 {
+  top: 158px;
+  right: 9%;
+  --s: 0.72;
+  animation: drift 22s ease-in-out infinite reverse;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateX(0) scale(var(--s, 1));
+  }
+  50% {
+    transform: translateX(34px) scale(var(--s, 1));
+  }
+}
+
+.ground {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  z-index: 0;
+  background: linear-gradient(180deg, var(--grass) 0 10px, var(--brick) 10px 100%);
+  pointer-events: none;
+}
+
+/* ---------- 顶栏 HUD ---------- */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  flex: 0 0 auto;
+}
+
+.hud-back {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  border-radius: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.hud-world {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.hud-world span {
+  color: var(--coin);
+}
+
+.hud-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.hud-stat > span:last-child {
+  font-family: var(--font-pixel);
+  font-size: 12px;
+}
+
+.hud-icon {
+  font-size: 18px;
+}
+
+.hud-spacer {
+  flex: 1;
+}
+
+.hud-score,
+.hud-coins {
+  color: var(--coin-dark);
+}
+
+.hud-hearts {
+  color: var(--mario-red);
+}
+
+/* ---------- 进度条 ---------- */
+.progress {
+  height: 12px;
+  flex: 0 0 auto;
+  margin: 0 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--coin), var(--star));
+  transition: width 0.35s ease;
+}
+
+/* ---------- 题目区 ---------- */
+.lesson {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px clamp(16px, 6vw, 64px) 40px;
+  overflow: auto;
+}
+
+.lesson-title {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.28);
+  letter-spacing: 1px;
+}
+
+.lesson-body {
+  width: 100%;
+  max-width: 760px;
+}
+
+.question-card {
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  padding: 28px clamp(18px, 4vw, 40px);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.question-card.shake {
+  animation: shake 0.35s ease;
+}
+
+.question-prompt {
+  margin: 0 0 28px;
+  font-size: clamp(22px, 4vw, 34px);
+  line-height: 1.35;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+  75% {
+    transform: translateX(-5px);
+  }
+}
+
+/* ---------- 选择题 / 判断题 ---------- */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.choice {
+  min-height: 64px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+  transition: transform 0.06s ease, background 0.12s ease;
+}
+
+.choice:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.choice.selected {
+  background: var(--coin);
+}
+
+/* ---------- 数轴 ---------- */
+.numberline {
+  padding: 10px 4px 34px;
+}
+
+.numberline-scale {
+  position: relative;
+  height: 96px;
+  margin: 0 34px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.numberline-scale::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: var(--ink);
+  border-radius: 2px;
+}
+
+.numberline-tick {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  background: var(--ink);
+}
+
+.numberline-tick-label {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.numberline-handle {
+  position: absolute;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--mario-red);
+  border: 4px solid #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.numberline-bubble {
+  position: absolute;
+  top: -42px;
+  transform: translateX(-50%);
+  min-width: 48px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--mario-red);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- 填空题 ---------- */
+.input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.answer-input {
+  width: 160px;
+  min-height: 64px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  border-radius: 14px;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--ink);
+  background: var(--card);
+  outline: none;
+}
+
+.answer-input:focus {
+  border-color: var(--mario-red);
+}
+
+.input-unit {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ---------- 排序题 ---------- */
+.order {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.order-chosen {
+  min-height: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 2px dashed var(--ink);
+  border-radius: 14px;
+}
+
+.order-pool {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.order-chip {
+  min-height: 54px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.order-chip.chosen {
+  background: var(--coin);
+}
+
+/* ---------- 底部按钮 ---------- */
+.controls {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  padding: 10px 18px calc(26px + env(safe-area-inset-bottom));
+}
+
+.btn-primary,
+.btn-ghost {
+  min-height: 58px;
+  padding: 14px 30px;
+  border-radius: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  border-bottom-style: solid;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  min-width: 260px;
+  background: var(--mario-red);
+  border-color: var(--mario-red-dark);
+  border-bottom-color: var(--mario-red-dark);
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:disabled {
+  background: #e5e5e5;
+  border-color: #cfcfcf;
+  border-bottom-color: #cfcfcf;
+  color: #afafaf;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.btn-ghost {
+  background: #fff;
+  color: var(--ink);
+}
+
+/* ---------- 反馈底部卡片 ---------- */
+.feedback {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 22px 24px calc(22px + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 4px solid var(--ink);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.feedback.show {
+  transform: translateY(0);
+}
+
+.feedback.correct {
+  border-top-color: var(--grass);
+}
+
+.feedback.wrong {
+  border-top-color: var(--mario-red);
+}
+
+.feedback-message {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.feedback.correct .feedback-message {
+  color: var(--pipe-green-dark);
+}
+
+.feedback.wrong .feedback-message {
+  color: var(--mario-red);
+}
+
+.feedback-combo {
+  margin: 0 0 8px;
+  color: var(--mario-red);
+  font-weight: 800;
+}
+
+.feedback-hint {
+  margin: 0 0 12px;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.feedback-explain {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #f7f7f7;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.feedback .btn-primary {
+  min-width: 180px;
+  margin-top: 8px;
+}
+
+.feedback .btn-ghost {
+  margin-right: 10px;
+  margin-top: 8px;
+}
+
+/* ---------- 结果浮层 ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.overlay-card {
+  width: min(420px, 100%);
+  padding: 32px 26px;
+  border-radius: 24px;
+  background: var(--card);
+  text-align: center;
+  border: 3px solid var(--ink);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+.overlay-emoji {
+  font-size: 60px;
+  margin-bottom: 10px;
+}
+
+.overlay-title {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.overlay-text {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.overlay-streak {
+  margin: 0 0 20px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--mario-red);
+}
+
+.overlay-card .btn-primary,
+.overlay-card .btn-ghost {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ---------- 横屏优先的响应式 ---------- */
+@media (min-width: 720px) {
+  .choices {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .choices {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-primary {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* ---------- 学习大厅（landing） ---------- */
+.hud-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.28);
+  letter-spacing: 1px;
+}
+
+.landing-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px clamp(16px, 6vw, 64px) 48px;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.mascot {
+  font-size: 74px;
+  line-height: 1;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.12));
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+  letter-spacing: 2px;
+}
+
+.tagline {
+  margin: 10px 0 6px;
+  font-size: 17px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.hero-streak {
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--mario-red);
+}
+
+.hero-cta {
+  min-width: 320px;
+  max-width: 100%;
+}
+
+.path {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.path-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+}
+
+.path-note {
+  margin: 0 0 18px;
+  font-size: 15px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-align: center;
+}
+
+.units {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 3px solid var(--ink);
+  border-bottom-width: 6px;
+  background: var(--card);
+  text-decoration: none;
+  color: var(--ink);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.12);
+}
+
+.unit-emoji {
+  font-size: 30px;
+}
+
+.unit-name {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.unit-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.unit-go {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--pipe-green-dark);
+}
+
+.unit-lock {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.unit-blue {
+  border-color: #1cb0f6;
+}
+
+.unit-green {
+  border-color: var(--pipe-green);
+}
+
+.unit-orange {
+  border-color: #ff9600;
+}
+
+.unit-purple {
+  border-color: #a560e8;
+}
+
+.unit.locked {
+  opacity: 0.72;
+  cursor: default;
+  box-shadow: none;
+}
+
+@media (max-width: 560px) {
+  .units {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-cta {
+    min-width: 0;
+    width: 100%;
+  }
+}
