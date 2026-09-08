@@ -1,4 +1,11 @@
-import { readStorage, writeStorage } from "../../src/core/storage";
+import { findLessonById } from "./course";
+import {
+  levelFromXp,
+  loadProgress,
+  recordCompletion,
+  saveProgress,
+  type Progress,
+} from "./progress";
 
 // ---------- 类型 ----------
 type QuestionType = "choice" | "numberline" | "input" | "truefalse" | "order";
@@ -24,14 +31,8 @@ const XP_PER_CORRECT = 10;
 const XP_LESSON_BONUS = 20;
 const GEMS_PER_LESSON = 5;
 
-const KEYS = {
-  streak: "ryan-games:math:streak",
-  lastPlayed: "ryan-games:math:lastPlayed",
-  xp: "ryan-games:math:xp",
-  gems: "ryan-games:math:gems",
-} as const;
-
-const LESSON: Question[] = [
+const LESSONS: Record<string, Question[]> = {
+  "number-negative": [
   {
     type: "choice",
     prompt: "杭州今天零下 3℃，这个温度应该记作哪个数？",
@@ -81,7 +82,50 @@ const LESSON: Question[] = [
     items: ["0", "−3", "2", "−5"],
     answer: ["−5", "−3", "0", "2"],
   },
-];
+  ],
+  "number-axis": [
+    {
+      type: "choice",
+      prompt: "在数轴上，3 的相反数是哪个数？",
+      hint: "相反数就是方向相反、到 0 距离一样的数。",
+      explain: "3 的相反数是 −3，它们在数轴上位于 0 的两侧、距离相等。",
+      choices: ["3", "−3", "0"],
+      answer: "−3",
+    },
+    {
+      type: "numberline",
+      prompt: "把 −4 的相反数拖到数轴上正确的位置。",
+      hint: "先想 −4 的相反数是多少，再把它拖到数轴上。",
+      explain: "−4 的相反数是 4，它在 0 右边第 4 格。",
+      min: -5,
+      max: 5,
+      tolerance: 0.5,
+      answer: 4,
+    },
+    {
+      type: "choice",
+      prompt: "−(−5) 等于多少？",
+      hint: "一个数前面再加一个负号，就变成了它的相反数。",
+      explain: "−5 的相反数是 5，所以 −(−5) = 5。",
+      choices: ["−5", "5", "0"],
+      answer: "5",
+    },
+    {
+      type: "input",
+      prompt: "−7 的相反数是几？",
+      hint: "相反数到 0 的距离一样，只是方向相反。",
+      explain: "−7 的相反数是 7。",
+      answer: 7,
+    },
+    {
+      type: "truefalse",
+      prompt: "0 的相反数还是 0。",
+      hint: "0 既不是正数也不是负数，它到原点的距离是 0。",
+      explain: "0 的相反数就是 0。",
+      answer: true,
+    },
+  ],
+};
 
 // ---------- 运行时状态 ----------
 let hearts = MAX_HEARTS;
@@ -91,9 +135,9 @@ let questionIndex = 0;
 let locked = false;
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 
-let xp = Number(readStorage(KEYS.xp) ?? "0");
-let gems = Number(readStorage(KEYS.gems) ?? "0");
-let streak = Number(readStorage(KEYS.streak) ?? "0");
+let progress: Progress = loadProgress();
+let lessonId = "number-negative";
+let questions: Question[] = [];
 
 let numberlineValue = 0;
 let orderPool: string[] = [];
@@ -123,34 +167,27 @@ function setText(selector: string, value: string | number): void {
   $(selector).textContent = String(value);
 }
 
-function dateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
 // ---------- HUD ----------
 function renderHud(): void {
-  setText("#streak", streak);
+  setText("#streak", progress.streak);
   setText("#hearts", hearts);
-  setText("#xp", xp);
-  setText("#gems", gems);
+  setText("#xp", progress.xp);
+  setText("#gems", progress.gems);
 }
 
 function renderProgress(): void {
-  const total = LESSON.length;
+  const total = questions.length;
   const percent = total === 0 ? 0 : ((questionIndex) / total) * 100;
   $("#progressBar").style.width = `${percent}%`;
 }
 
 // ---------- 题目渲染 ----------
 function renderQuestion(): void {
-  const q = LESSON[questionIndex];
+  const q = questions[questionIndex];
 
   numberlineValue = 0;
   orderPool = [...(q.items ?? [])];
@@ -347,7 +384,7 @@ function renderOrder(chosenEl: HTMLElement, poolEl: HTMLElement): void {
 function submit(): void {
   if (locked) return;
 
-  const q = LESSON[questionIndex];
+  const q = questions[questionIndex];
   const result = checkAnswer(q);
 
   if (result === undefined) {
@@ -387,8 +424,8 @@ function checkAnswer(q: Question): boolean | undefined {
 function onCorrect(q: Question): void {
   combo += 1;
   earnedXp += XP_PER_CORRECT;
-  xp += XP_PER_CORRECT;
-  writeStorage(KEYS.xp, String(xp));
+  progress.xp += XP_PER_CORRECT;
+  saveProgress(progress);
   renderHud();
 
   const feedback = $("#feedback");
@@ -444,7 +481,7 @@ function onWrong(q: Question): void {
 
 function advance(): void {
   questionIndex += 1;
-  if (questionIndex >= LESSON.length) {
+  if (questionIndex >= questions.length) {
     completeLesson();
   } else {
     renderQuestion();
@@ -492,27 +529,30 @@ function hideOverlay(): void {
 
 // ---------- 课程完成 / 失败 ----------
 function completeLesson(): void {
-  bumpStreak();
-  xp += XP_LESSON_BONUS;
+  const levelBefore = levelFromXp(progress.xp).level;
+  progress = recordCompletion(lessonId, XP_LESSON_BONUS, GEMS_PER_LESSON);
   earnedXp += XP_LESSON_BONUS;
-  gems += GEMS_PER_LESSON;
-  writeStorage(KEYS.xp, String(xp));
-  writeStorage(KEYS.gems, String(gems));
+  const levelAfter = levelFromXp(progress.xp).level;
   renderHud();
 
   const card = el("div", "overlay-card");
   card.append(el("div", "overlay-emoji", "⭐"));
-  card.append(el("h2", "overlay-title", "课程完成！"));
-  card.append(el("p", "overlay-text", `本次获得 ${earnedXp} 分、${GEMS_PER_LESSON} 枚金币`));
-  card.append(el("p", "overlay-streak", `🔥 连续打卡 ${streak} 天`));
+  card.append(el("h2", "overlay-title", "关卡完成！"));
+  card.append(
+    el("p", "overlay-text", `本次获得 ${earnedXp} 分、${GEMS_PER_LESSON} 枚金币`),
+  );
+  if (levelAfter > levelBefore) {
+    card.append(el("p", "overlay-streak", `🎖️ 升级到 Lv.${levelAfter}`));
+  }
+  card.append(el("p", "overlay-streak", `🔥 连续打卡 ${progress.streak} 天`));
 
-  const again = el("button", "btn-primary", "再来一节");
+  const again = el("button", "btn-primary", "再来一次");
   again.type = "button";
   again.addEventListener("click", () => {
     hideOverlay();
     resetLesson();
   });
-  const back = el("a", "btn-ghost", "返回大厅");
+  const back = el("a", "btn-ghost", "返回学习大厅");
   back.href = "../";
   card.append(again, back);
 
@@ -531,7 +571,7 @@ function failLesson(): void {
     hideOverlay();
     resetLesson();
   });
-  const back = el("a", "btn-ghost", "返回大厅");
+  const back = el("a", "btn-ghost", "返回学习大厅");
   back.href = "../";
   card.append(retry, back);
 
@@ -547,25 +587,37 @@ function resetLesson(): void {
   renderQuestion();
 }
 
-function bumpStreak(): void {
-  const today = dateKey(new Date());
-  const yesterday = dateKey(new Date(Date.now() - 86_400_000));
-  const last = readStorage(KEYS.lastPlayed);
+// ---------- 启动 ----------
+function resolveLesson(): void {
+  const params = new URLSearchParams(window.location.search);
+  lessonId = params.get("lesson") ?? "number-negative";
+  questions = LESSONS[lessonId] ?? [];
 
-  if (last !== today) {
-    streak = last === yesterday ? streak + 1 : 1;
-    writeStorage(KEYS.streak, String(streak));
+  const ref = findLessonById(lessonId);
+  if (ref) {
+    setText("#lessonTitle", `第 ${ref.index + 1} 课 · ${ref.lesson.title}`);
   }
-  writeStorage(KEYS.lastPlayed, today);
 }
 
-// ---------- 启动 ----------
 function init(): void {
+  resolveLesson();
   $("#submitBtn").addEventListener("click", submit);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Enter") submit();
   });
   renderHud();
+
+  if (questions.length === 0) {
+    const lesson = $("#lesson");
+    lesson.innerHTML = "";
+    const card = el("div", "question-card");
+    card.append(el("h2", "question-prompt", "这个关卡即将开放 🚧"));
+    card.append(el("p", "feedback-hint", "完成前面的关卡，就能解锁这里。"));
+    lesson.append(card);
+    setLocked(true);
+    return;
+  }
+
   renderQuestion();
 }
 

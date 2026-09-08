@@ -37,6 +37,10 @@
         <a class="hud-back" href="../" aria-label="返回游戏合集">←</a>
         <div class="hud-title">数字大陆</div>
         <div class="hud-spacer"></div>
+        <div class="hud-stat hud-level" title="等级">
+          <span class="hud-icon">🏅</span>
+          <span id="landingLevel">Lv.1</span>
+        </div>
         <div class="hud-stat hud-score" title="得分">
           <span class="hud-icon">⭐</span>
           <span id="landingScore">0</span>
@@ -53,42 +57,31 @@
           <h1 class="hero-title">数字大陆</h1>
           <p class="tagline">多邻国式 · 初一数学闯关</p>
           <p class="hero-streak" id="landingStreak">🔥 连续打卡 0 天</p>
-          <a class="btn-primary hero-cta" href="./play/">开始学习 · 第 1 课 认识负数</a>
+
+          <div class="xp-card">
+            <div class="xp-top">
+              <span id="landingLevelText">Lv.1</span>
+              <span id="landingXpText">0 / 100</span>
+            </div>
+            <div class="xp-bar">
+              <div id="landingXpBar" class="xp-fill"></div>
+            </div>
+          </div>
+
+          <a class="btn-primary hero-cta" id="ctaLink" href="./play/"
+            >开始学习</a
+          >
         </section>
 
         <section class="path">
           <h2 class="path-title">学习路径</h2>
           <p class="path-note">数 → 式 → 方程 → 解决问题</p>
-
-          <div class="units">
-            <a class="unit unit-blue" href="./play/">
-              <span class="unit-emoji">🔢</span>
-              <span class="unit-name">数与运算</span>
-              <span class="unit-sub">有理数 · 实数 · 运算</span>
-              <span class="unit-go">第 1 课已开放 →</span>
-            </a>
-            <div class="unit unit-green locked">
-              <span class="unit-emoji">🔤</span>
-              <span class="unit-name">代数式</span>
-              <span class="unit-sub">整式 · 合并同类项</span>
-              <span class="unit-lock">即将开放</span>
-            </div>
-            <div class="unit unit-orange locked">
-              <span class="unit-emoji">⚖️</span>
-              <span class="unit-name">方程</span>
-              <span class="unit-sub">一元一次方程 · 天平</span>
-              <span class="unit-lock">即将开放</span>
-            </div>
-            <div class="unit unit-purple locked">
-              <span class="unit-emoji">📐</span>
-              <span class="unit-name">图形与几何</span>
-              <span class="unit-sub">线段 · 角 · 相交线</span>
-              <span class="unit-lock">即将开放</span>
-            </div>
-          </div>
+          <div class="units" id="units"></div>
         </section>
       </main>
     </div>
+
+    <div id="overlay" class="overlay" hidden></div>
 
     <script type="module" src="./src/home.ts"></script>
   </body>
