@@ -6,7 +6,15 @@ import {
   savePlayerName,
 } from "../../src/core/player";
 import { readStorage, writeStorage } from "../../src/core/storage";
+import { setupPageTransitions } from "../../src/core/transition";
 import { setupAppUpdate } from "../../src/core/update";
+import {
+  getUnit,
+  shuffle,
+  WORD_UNITS,
+  type EnglishWord,
+  type WordUnit,
+} from "./word-data";
 
 // ---------- 配置 ----------
 const GRID = 20; // 网格 20 x 20
@@ -20,7 +28,21 @@ interface Point {
   y: number;
 }
 
+type GameMode = "word" | "classic";
+
+interface WordFood extends Point {
+  slot: number;
+  word: EnglishWord;
+}
+
+interface WordWave {
+  target: EnglishWord;
+  options: EnglishWord[];
+}
+
 const LEADERBOARD_KEY = "ryan-games:leaderboard:snake";
+const SLOT_COLORS = ["#ff4b3e", "#2dc07c", "#ffcf00"];
+const SLOT_LETTERS = ["A", "B", "C"];
 
 function element<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -50,6 +72,16 @@ const soundBtn = element<HTMLButtonElement>("soundBtn");
 const playerNameInput = element<HTMLInputElement>("playerName");
 const boardList = element<HTMLUListElement>("boardList");
 const boardEmpty = element<HTMLParagraphElement>("boardEmpty");
+const modeWordBtn = element<HTMLButtonElement>("modeWordBtn");
+const modeClassicBtn = element<HTMLButtonElement>("modeClassicBtn");
+const unitSelect = element<HTMLSelectElement>("unitSelect");
+const wordBar = element<HTMLDivElement>("wordBar");
+const promptZh = element<HTMLSpanElement>("promptZh");
+const choiceRow = element<HTMLDivElement>("choiceRow");
+const wordHint = element<HTMLParagraphElement>("wordHint");
+const wordSummaryCard = element<HTMLElement>("wordSummaryCard");
+const wordSummaryList = element<HTMLUListElement>("wordSummaryList");
+const wordSummaryEmpty = element<HTMLParagraphElement>("wordSummaryEmpty");
 
 // ---------- 状态 ----------
 let snake: Point[] = [];
@@ -66,6 +98,14 @@ let started = false;
 let timer: number | null = null;
 let muted = readStorage("superSnakeMuted") === "1";
 let audioCtx: AudioContext | null = null;
+let gameMode: GameMode = "word";
+let selectedUnitId = "starter-1";
+let wordFoods: WordFood[] = [];
+let wordWave: WordWave | null = null;
+let sessionWords: EnglishWord[] = [];
+let wordQueue: EnglishWord[] = [];
+let lastWord: EnglishWord | null = null;
+let hintTimer: number | null = null;
 
 const COL = {
   bg: "#0e1a2e",
@@ -154,12 +194,144 @@ const sfx = {
   pause(): void {
     beep(330, 0.06, "square", 0.05);
   },
+  wrong(): void {
+    beep(180, 0.09, "square", 0.05);
+    beep(140, 0.16, "sawtooth", 0.06, 0.09);
+  },
   over(): void {
     beep(392, 0.15, "sawtooth", 0.07);
     beep(262, 0.2, "sawtooth", 0.07, 0.15);
     beep(131, 0.35, "sawtooth", 0.07, 0.35);
   },
 };
+
+// ---------- 单词学习工具 ----------
+function currentUnit(): WordUnit {
+  return getUnit(selectedUnitId);
+}
+
+function speakEnglish(text: string): void {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.85;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // 不支持语音时静默跳过
+  }
+}
+
+function flashWordHint(message: string, wrong = false): void {
+  if (hintTimer !== null) window.clearTimeout(hintTimer);
+  wordHint.textContent = message;
+  wordHint.classList.toggle("wrong", wrong);
+  wordHint.hidden = false;
+  hintTimer = window.setTimeout(() => {
+    wordHint.hidden = true;
+  }, 3200);
+}
+
+function canPlaceFood(x: number, y: number): boolean {
+  if (snake.some((segment) => segment.x === x && segment.y === y)) return false;
+  if (wordFoods.some((item) => item.x === x && item.y === y)) return false;
+  if (food && food.x === x && food.y === y) return false;
+  return true;
+}
+
+function placeClassicFood(): void {
+  for (let attempt = 0; attempt < 800; attempt++) {
+    const candidate: Point = { x: rand(GRID), y: rand(GRID) };
+    if (canPlaceFood(candidate.x, candidate.y)) {
+      food = candidate;
+      return;
+    }
+  }
+  food = null;
+}
+
+function renderWordChoices(): void {
+  choiceRow.replaceChildren();
+  if (!wordWave) return;
+
+  wordWave.options.forEach((option, slot) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "choice-btn";
+    button.dataset.slot = String(slot);
+
+    const dot = document.createElement("span");
+    dot.className = "choice-dot";
+    dot.style.background = SLOT_COLORS[slot] ?? "#fff";
+
+    const label = document.createElement("span");
+    label.className = "choice-text";
+    label.textContent = `${SLOT_LETTERS[slot]} · ${option.word}`;
+
+    button.append(dot, label);
+    button.addEventListener("click", () => speakEnglish(option.word));
+    choiceRow.append(button);
+  });
+}
+
+function tryPlaceWordFood(item: WordFood): boolean {
+  for (let attempt = 0; attempt < 800; attempt++) {
+    const candidate: Point = { x: rand(GRID), y: rand(GRID) };
+    if (canPlaceFood(candidate.x, candidate.y)) {
+      item.x = candidate.x;
+      item.y = candidate.y;
+      return true;
+    }
+  }
+  return false;
+}
+
+function startWordWave(): boolean {
+  const unit = currentUnit();
+  if (unit.words.length < 3) return false;
+
+  if (wordQueue.length === 0) {
+    wordQueue = shuffle(unit.words);
+    if (
+      lastWord &&
+      wordQueue.length > 1 &&
+      wordQueue[0].word === lastWord.word
+    ) {
+      [wordQueue[0], wordQueue[1]] = [wordQueue[1], wordQueue[0]];
+    }
+  }
+
+  const target = wordQueue.shift();
+  if (!target) return false;
+  lastWord = target;
+
+  const distractors = shuffle(
+    unit.words.filter((item) => item.word !== target.word),
+  ).slice(0, 2);
+  const options = shuffle([target, ...distractors]);
+  wordWave = { target, options };
+  wordFoods = [];
+
+  for (let slot = 0; slot < options.length; slot++) {
+    const item: WordFood = { x: -1, y: -1, slot, word: options[slot] };
+    if (!tryPlaceWordFood(item)) {
+      wordFoods = [];
+      wordWave = null;
+      return false;
+    }
+    wordFoods.push(item);
+  }
+
+  promptZh.textContent = `“${target.zh}”`;
+  wordHint.hidden = true;
+  renderWordChoices();
+  return true;
+}
+
+function endGameBecauseFull(): void {
+  gameOverRun();
+}
 
 // ---------- 游戏逻辑 ----------
 function reset(): void {
@@ -174,27 +346,35 @@ function reset(): void {
   speed = START_SPEED;
   gameOver = false;
   paused = false;
-  spawnFood();
-  updateHud();
-  draw();
-}
+  food = null;
+  wordFoods = [];
+  wordWave = null;
+  sessionWords = [];
+  wordQueue = [];
+  lastWord = null;
+  wordSummaryCard.hidden = true;
+  wordSummaryList.replaceChildren();
 
-function spawnFood(): void {
-  while (true) {
-    const candidate: Point = { x: rand(GRID), y: rand(GRID) };
-    const occupied = snake.some(
-      (segment) => segment.x === candidate.x && segment.y === candidate.y,
-    );
-    if (!occupied) {
-      food = candidate;
+  if (gameMode === "word") {
+    if (!startWordWave()) {
+      endGameBecauseFull();
       return;
     }
+  } else {
+    placeClassicFood();
   }
+
+  updateHud();
+  draw();
 }
 
 function schedule(): void {
   if (timer !== null) window.clearTimeout(timer);
   timer = window.setTimeout(tick, speed);
+}
+
+function isTargetWordFood(item: WordFood): boolean {
+  return wordWave !== null && item.word.word === wordWave.target.word;
 }
 
 function tick(): void {
@@ -211,8 +391,24 @@ function tick(): void {
     return;
   }
 
+  const classicHit =
+    gameMode === "classic" &&
+    food !== null &&
+    nx === food.x &&
+    ny === food.y;
+  const wordHitIndex =
+    gameMode === "word"
+      ? wordFoods.findIndex(
+          (item) => item.x === nx && item.y === ny,
+        )
+      : -1;
+  const wordHit =
+    wordHitIndex >= 0 ? (wordFoods[wordHitIndex] ?? null) : null;
+
   // 咬到自己（尾巴即将离开时不算撞）
-  const willGrow = food !== null && nx === food.x && ny === food.y;
+  const willGrow =
+    classicHit ||
+    (wordHit !== null && isTargetWordFood(wordHit));
   const bodyToCheck = willGrow ? snake : snake.slice(0, -1);
   if (bodyToCheck.some((segment) => segment.x === nx && segment.y === ny)) {
     gameOverRun();
@@ -221,7 +417,7 @@ function tick(): void {
 
   snake.unshift({ x: nx, y: ny });
 
-  if (willGrow) {
+  if (classicHit && food) {
     score += 10;
     speed = Math.max(MIN_SPEED, speed - SPEED_STEP);
     if (score > hiScore) {
@@ -229,7 +425,36 @@ function tick(): void {
       writeStorage("superSnakeHi", String(hiScore));
     }
     sfx.eat();
-    spawnFood();
+    placeClassicFood();
+  } else if (wordHit !== null) {
+    wordFoods.splice(wordHitIndex, 1);
+    if (isTargetWordFood(wordHit)) {
+      const firstTime = !sessionWords.some(
+        (learned) => learned.word === wordHit.word.word,
+      );
+      if (firstTime) {
+        sessionWords.push(wordHit.word);
+        score += 20;
+      } else {
+        score += 10;
+      }
+      speed = Math.max(MIN_SPEED, speed - SPEED_STEP);
+      if (score > hiScore) {
+        hiScore = score;
+        writeStorage("superSnakeHi", String(hiScore));
+      }
+      sfx.eat();
+      speakEnglish(wordHit.word.word);
+      if (!startWordWave()) {
+        gameOverRun();
+        return;
+      }
+    } else {
+      snake.pop();
+      score = Math.max(0, score - 5);
+      sfx.wrong();
+      flashWordHint(`${wordHit.word.word} = ${wordHit.word.zh}`, true);
+    }
   } else {
     snake.pop();
   }
@@ -258,14 +483,20 @@ function gameOverRun(): void {
   }
 
   renderBoard();
+  renderWordSummary();
   draw();
+  const wordsLearned =
+    gameMode === "word" && sessionWords.length > 0
+      ? `\n本局掌握 ${sessionWords.length} 个单词`
+      : "";
   showOverlay(
     "GAME OVER",
-    `本局得分 ${score}\n最高分 ${hiScore}${recordText}`,
+    `本局得分 ${score}\n最高分 ${hiScore}${wordsLearned}${recordText}`,
     "PRESS SPACE TO RETRY",
   );
   startBtn.textContent = "RETRY";
   pauseBtn.disabled = true;
+  updateModeUI();
 }
 
 function startGame(): void {
@@ -278,6 +509,7 @@ function startGame(): void {
   startBtn.textContent = "RESTART";
   pauseBtn.disabled = false;
   pauseBtn.textContent = "PAUSE";
+  updateModeUI();
   schedule();
 }
 
@@ -303,12 +535,69 @@ function togglePause(): void {
   }
 }
 
+function renderWordSummary(): void {
+  wordSummaryList.replaceChildren();
+  if (gameMode !== "word" || sessionWords.length === 0) {
+    wordSummaryCard.hidden = true;
+    return;
+  }
+
+  wordSummaryCard.hidden = false;
+  wordSummaryEmpty.hidden = true;
+  sessionWords.forEach((word) => {
+    const item = document.createElement("li");
+    const en = document.createElement("span");
+    en.className = "word-summary-en";
+    en.textContent = word.word;
+
+    const zh = document.createElement("span");
+    zh.className = "word-summary-zh";
+    zh.textContent = word.zh;
+    const tip = document.createElement("small");
+    tip.textContent = "点击听发音";
+    zh.append(tip);
+
+    item.append(en, zh);
+    item.addEventListener("click", () => speakEnglish(word.word));
+    wordSummaryList.append(item);
+  });
+}
+
+function updateModeUI(): void {
+  const wordMode = gameMode === "word";
+  const locked = started && !gameOver;
+  modeWordBtn.classList.toggle("active", wordMode);
+  modeClassicBtn.classList.toggle("active", !wordMode);
+  modeWordBtn.disabled = locked;
+  modeClassicBtn.disabled = locked;
+  wordBar.hidden = !wordMode;
+  unitSelect.disabled = !wordMode || locked;
+}
+
+function switchGameMode(mode: GameMode): void {
+  if (mode === gameMode) return;
+  if (started && !gameOver) return; // 游戏中不允许切换，避免打断
+  gameMode = mode;
+  updateModeUI();
+  renderBoard();
+}
+
+function showStartIntro(): void {
+  const title = gameMode === "word" ? "WORD SNAKE" : "SUPER SNAKE";
+  const text =
+    gameMode === "word"
+      ? "单词闯关模式\n看中文意思，把蛇引向正确颜色的单词\n答对 +20 并听发音，答错会立刻讲解"
+      : "经典贪吃蛇\n方向键 / WASD 控制\n吃到苹果变长，撞墙或咬到自己结束";
+  showOverlay(title, text, "PRESS START");
+}
+
 // ---------- 画面 ----------
 function draw(): void {
   ctx.fillStyle = COL.bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid();
-  drawFood();
+  if (gameMode === "word") drawWordFoods();
+  else drawFood();
   drawSnake();
 }
 
@@ -363,6 +652,38 @@ function drawFood(): void {
   ctx.beginPath();
   ctx.ellipse(cx + 6.5, cy - r, 4.6, 2.4, -0.55, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawWordFoods(): void {
+  wordFoods.forEach((item) => {
+    const x = item.x * CELL;
+    const y = item.y * CELL;
+    const cx = x + CELL / 2;
+    const color = SLOT_COLORS[item.slot] ?? "#fff";
+    const letter = SLOT_LETTERS[item.slot] ?? "?";
+
+    // 彩色“单词球”
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, y + CELL - 6, 6.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.beginPath();
+    ctx.arc(cx - 2, y + CELL - 8, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 对应选项的 A/B/C 标签
+    ctx.fillStyle = "rgba(8,12,26,0.9)";
+    ctx.fillRect(cx - 6, y + 2, 12, 12);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cx - 6, y + 2, 12, 12);
+    ctx.fillStyle = item.slot === 2 ? "#1a1400" : "#fff";
+    ctx.font = "bold 9px 'Press Start 2P', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(letter, cx, y + 8.5);
+  });
 }
 
 function roundRect(x: number, y: number, w: number, h: number, r: number): void {
@@ -558,6 +879,12 @@ playerNameInput.addEventListener("input", () => {
   renderBoard();
 });
 
+modeWordBtn.addEventListener("click", () => switchGameMode("word"));
+modeClassicBtn.addEventListener("click", () => switchGameMode("classic"));
+unitSelect.addEventListener("change", () => {
+  selectedUnitId = unitSelect.value;
+});
+
 document.querySelectorAll<HTMLButtonElement>(".dpad-btn").forEach((button) => {
   button.addEventListener("click", () => {
     const direction = button.dataset.dir;
@@ -574,16 +901,26 @@ overlay.addEventListener("click", () => {
 });
 
 // ---------- 启动 ----------
+function populateUnitSelect(): void {
+  unitSelect.replaceChildren();
+  WORD_UNITS.forEach((unit) => {
+    const option = document.createElement("option");
+    option.value = unit.id;
+    option.textContent = unit.label;
+    unitSelect.append(option);
+  });
+  unitSelect.value = selectedUnitId;
+}
+
 function init(): void {
+  setupPageTransitions();
+  populateUnitSelect();
   soundBtn.textContent = muted ? "SOUND OFF" : "SOUND ON";
   playerNameInput.value = loadPlayerName();
+  updateModeUI();
   reset();
   renderBoard();
-  showOverlay(
-    "SUPER SNAKE",
-    "经典贪吃蛇\n方向键 / WASD 控制\n吃到苹果变长，撞墙或咬到自己结束",
-    "PRESS START",
-  );
+  showStartIntro();
 }
 
 setupAppUpdate({ mode: "prompt" });

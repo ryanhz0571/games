@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1f1d1d" />
+    <style>
+      html {
+        background: #4d7ce0;
+      }
+    </style>
     <meta name="description" content="SUPER SNAKE：NES 风格经典贪吃蛇，含本地排行榜。" />
     <link rel="manifest" href="../manifest.webmanifest" />
     <link
@@ -47,6 +52,31 @@
             <span class="hud-label">HI-SCORE</span>
             <span id="hiScore" class="hud-value">000000</span>
           </div>
+        </div>
+
+        <div class="mode-row">
+          <div class="mode-toggle" role="group" aria-label="游戏模式">
+            <button id="modeWordBtn" class="mode-btn active" type="button">
+              🅰️ 单词闯关
+            </button>
+            <button id="modeClassicBtn" class="mode-btn" type="button">
+              🍎 经典模式
+            </button>
+          </div>
+          <label class="unit-picker" for="unitSelect">
+            <span>词库</span>
+            <select id="unitSelect"></select>
+          </label>
+        </div>
+
+        <div id="wordBar" class="word-bar">
+          <div class="word-question">
+            <span class="word-q-title">把蛇引向正确单词：</span>
+            <strong id="promptZh" class="word-q-text"></strong>
+          </div>
+          <div id="choiceRow" class="choice-row"></div>
+          <p class="word-hint-tip">点击选项可听发音 · 蛇的颜色要和答案对应</p>
+          <p id="wordHint" class="word-hint" hidden></p>
         </div>
 
         <div class="screen-wrap">
@@ -106,6 +136,14 @@
         <ul id="boardList" class="board-list"></ul>
         <p id="boardEmpty" class="board-empty">
           还没有记录，输入名字开始挑战吧
+        </p>
+      </section>
+
+      <section id="wordSummaryCard" class="board-card learn-card" hidden>
+        <h2 class="board-heading">📖 本局单词 · WORD BOOK</h2>
+        <ul id="wordSummaryList" class="word-summary-list"></ul>
+        <p id="wordSummaryEmpty" class="board-empty">
+          本局还没有吃到单词，再来一局试试
         </p>
       </section>
     </div>

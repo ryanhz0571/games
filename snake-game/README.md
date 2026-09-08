@@ -26,11 +26,24 @@
 - 本地排行榜：开始前输入昵称，每个昵称只保留最高分
 - 作为 PWA 游戏接入全站自动更新与离线缓存
 
+## 🅰️ 单词闯关模式
+
+进入游戏后默认是 **单词闯关模式**：题目给出中文意思，画面上三种颜色的食物对应 A/B/C 三个英文选项，把蛇引向正确颜色的单词即可得分。
+
+- 词库按人教版（2024 版）七年级上册单元分档：Hello!、You and Me、We're Family、My School、Favourite Subject、Fun Clubs、A Day in the Life、Happy Birthday!
+- 答对 +20 分（重复巩固 +10 分），自动播放标准发音
+- 答错不结束游戏，只扣 5 分并立刻给出中英对照讲解
+- 每局结束会生成“本局单词本”，点击单词可反复听发音
+- 可随时切回经典苹果模式，排行榜两种模式共用
+
+词库与单元对应关系见 `src/word-data.ts`，想加词直接在该文件里按单元追加即可。
+
 ## 项目文件
 
 - `index.html` — 游戏页面
 - `style.css` — NES 风格样式
 - `src/main.ts` — 游戏逻辑与音效（TypeScript）
+- `src/word-data.ts` — 初一英语词库（按教材单元分档）
 - `screenshot.png` — 游戏截图
 
 游戏逻辑由仓库根目录的 Vite + TypeScript 工程构建；PWA 更新、离线缓存与本地排行榜使用 `src/core/` 下的共享模块。
