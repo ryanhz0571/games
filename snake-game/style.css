@@ -693,6 +693,14 @@ canvas {
   }
 }
 
+@media (max-width: 899px) {
+  .word-panel {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+}
+
 @media (min-width: 900px) {
   .page {
     max-width: 1000px;
