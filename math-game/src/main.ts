@@ -6,6 +6,11 @@ import {
   saveProgress,
   type Progress,
 } from "./progress";
+import { setupPageTransitions } from "../../src/core/transition";
+import {
+  setupWellbeing,
+  type WellbeingController,
+} from "../../src/core/wellbeing";
 
 // ---------- 类型 ----------
 type QuestionType = "choice" | "numberline" | "input" | "truefalse" | "order";
@@ -142,6 +147,8 @@ let questions: Question[] = [];
 let numberlineValue = 0;
 let orderPool: string[] = [];
 let orderChosen: string[] = [];
+let lockedBeforeRest: boolean | null = null;
+let wellbeing: WellbeingController | null = null;
 
 // ---------- 小工具 ----------
 function $<T extends HTMLElement = HTMLElement>(selector: string): T {
@@ -217,13 +224,13 @@ function buildAnswerArea(q: Question): HTMLElement {
     case "choice":
       return buildChoice(q);
     case "truefalse":
-      return buildTrueFalse(q);
+      return buildTrueFalse();
     case "numberline":
       return buildNumberLine(q);
     case "input":
       return buildInput(q);
     case "order":
-      return buildOrder(q);
+      return buildOrder();
   }
 }
 
@@ -243,7 +250,7 @@ function buildChoice(q: Question): HTMLElement {
   return wrap;
 }
 
-function buildTrueFalse(q: Question): HTMLElement {
+function buildTrueFalse(): HTMLElement {
   const wrap = el("div", "choices");
   const options: Array<[string, string]> = [
     ["true", "对"],
@@ -338,7 +345,7 @@ function buildInput(q: Question): HTMLElement {
   return wrap;
 }
 
-function buildOrder(q: Question): HTMLElement {
+function buildOrder(): HTMLElement {
   const wrap = el("div", "order");
   const chosen = el("div", "order-chosen");
   const pool = el("div", "order-pool");
@@ -382,7 +389,7 @@ function renderOrder(chosenEl: HTMLElement, poolEl: HTMLElement): void {
 
 // ---------- 提交与判定 ----------
 function submit(): void {
-  if (locked) return;
+  if (locked || wellbeing?.isResting()) return;
 
   const q = questions[questionIndex];
   const result = checkAnswer(q);
@@ -510,7 +517,7 @@ function hideFeedback(): void {
 
 function setLocked(value: boolean): void {
   locked = value;
-  $("#submitBtn").disabled = value;
+  $<HTMLButtonElement>("#submitBtn").disabled = value;
 }
 
 function showOverlay(card: HTMLElement): void {
@@ -600,6 +607,8 @@ function resolveLesson(): void {
 }
 
 function init(): void {
+  setupPageTransitions();
+
   resolveLesson();
   $("#submitBtn").addEventListener("click", submit);
   document.addEventListener("keydown", (event) => {
@@ -620,5 +629,22 @@ function init(): void {
 
   renderQuestion();
 }
+
+// ---------- 健康游戏 / 防沉迷 ----------
+// 休息提醒出现时先把答题按钮锁住，休息结束后再恢复原状态
+wellbeing = setupWellbeing({
+  page: "game",
+  gameName: "数字大陆",
+  onRestStart: () => {
+    if (lockedBeforeRest === null) lockedBeforeRest = locked;
+    setLocked(true);
+  },
+  onRestEnd: () => {
+    if (lockedBeforeRest === null) return;
+    const restore = lockedBeforeRest;
+    lockedBeforeRest = null;
+    setLocked(restore);
+  },
+});
 
 init();

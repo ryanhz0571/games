@@ -1,5 +1,7 @@
 import { COURSE, type LessonMeta } from "./course";
 import { dailyCheckIn, levelFromXp, loadProgress, type Progress } from "./progress";
+import { setupPageTransitions } from "../../src/core/transition";
+import { setupWellbeing } from "../../src/core/wellbeing";
 
 function $<T extends HTMLElement = HTMLElement>(selector: string): T {
   const node = document.querySelector<T>(selector);
@@ -160,6 +162,8 @@ function hideOverlay(): void {
 }
 
 function init(): void {
+  setupPageTransitions();
+
   const checkIn = dailyCheckIn();
   const progress = loadProgress();
   const level = levelFromXp(progress.xp);
@@ -178,6 +182,12 @@ function init(): void {
   if (checkIn.isNewDay) {
     showDailyReward(checkIn);
   }
+
+  setupWellbeing({
+    page: "hall",
+    gameName: "数字大陆",
+    cardSlot: ".landing-main",
+  });
 }
 
 init();

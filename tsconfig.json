@@ -15,5 +15,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "snake-game/src"]
+  "include": ["src", "snake-game/src", "math-game/src"]
 }

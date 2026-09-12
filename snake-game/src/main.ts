@@ -8,6 +8,7 @@ import {
 import { readStorage, writeStorage } from "../../src/core/storage";
 import { setupPageTransitions } from "../../src/core/transition";
 import { setupAppUpdate } from "../../src/core/update";
+import { setupWellbeing } from "../../src/core/wellbeing";
 import {
   getUnit,
   shuffle,
@@ -116,6 +117,7 @@ let lastWord: EnglishWord | null = null;
 let hintTimer: number | null = null;
 let countdownRemaining = COUNTDOWN_SECONDS;
 let countdownTimer: number | null = null;
+let pausedByWellbeing = false;
 
 const COL = {
   bg: "#0e1a2e",
@@ -643,8 +645,8 @@ function showStartIntro(): void {
   const title = gameMode === "word" ? "WORD SNAKE" : "SUPER SNAKE";
   const text =
     gameMode === "word"
-      ? "单词闯关模式\n看中文意思，把蛇引向正确颜色的单词\n答对 +20 并听发音，答错会立刻讲解"
-      : "经典贪吃蛇\n方向键 / WASD 控制\n吃到苹果变长，撞墙或咬到自己结束";
+      ? "单词闯关模式\n看中文意思，把蛇引向正确颜色的单词\n答对 +20 并听发音，答错会立刻讲解\n每玩 20 分钟会提醒你远眺休息"
+      : "经典贪吃蛇\n方向键 / WASD 控制\n吃到苹果变长，撞墙或咬到自己结束\n每玩 20 分钟会提醒你远眺休息";
   showOverlay(title, text, "PRESS START");
 }
 
@@ -860,6 +862,7 @@ function setDir(x: number, y: number): void {
 }
 
 document.addEventListener("keydown", (event) => {
+  if (wellbeing.isResting()) return;
   const key = event.key.toLowerCase();
   let handled = true;
 
@@ -921,6 +924,7 @@ function updateJoystick(dx: number, dy: number): void {
 joyZone.addEventListener(
   "touchstart",
   (event) => {
+    if (wellbeing.isResting()) return;
     const touch = event.changedTouches[0];
     joyOrigin = { x: touch.clientX, y: touch.clientY };
     joyActive = false;
@@ -993,6 +997,7 @@ document.querySelectorAll<HTMLButtonElement>(".dpad-btn").forEach((button) => {
 
 // 点击遮罩层 = 开始/暂停
 overlay.addEventListener("click", () => {
+  if (wellbeing.isResting()) return;
   if (!started || gameOver) startRun();
   else togglePause();
 });
@@ -1019,6 +1024,37 @@ function init(): void {
   renderBoard();
   showStartIntro();
 }
+
+const wellbeing = setupWellbeing({
+  page: "game",
+  gameName: "SUPER SNAKE",
+  onRestStart: () => {
+    if (running && !paused && !gameOver) {
+      pausedByWellbeing = true;
+      paused = true;
+      draw();
+    }
+  },
+  onRestEnd: () => {
+    if (!pausedByWellbeing) return;
+    pausedByWellbeing = false;
+    if (running && !gameOver) {
+      paused = false;
+      schedule();
+      draw();
+    }
+  },
+});
+
+// 离开页面（切到别的应用 / 锁屏）时自动暂停，回来接着玩
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) return;
+  if (!running || paused || gameOver) return;
+  paused = true;
+  pausedByWellbeing = false;
+  showOverlay("PAUSE", "你离开了一下，已经自动暂停\n点一下屏幕继续", null);
+  draw();
+});
 
 setupAppUpdate({ mode: "prompt" });
 init();

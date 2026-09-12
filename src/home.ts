@@ -1,5 +1,7 @@
 import "./home.css";
+import { setupPageTransitions } from "./core/transition";
 import { setupAppUpdate } from "./core/update";
+import { setupWellbeing } from "./core/wellbeing";
 
 interface GameInfo {
   emoji: string;
@@ -70,4 +72,6 @@ function markReady(): void {
 
 buildCards();
 markReady();
+setupPageTransitions();
+setupWellbeing({ page: "hall", cardSlot: "#wellbeingPlace" });
 setupAppUpdate({ mode: "auto" });
