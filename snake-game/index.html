@@ -36,6 +36,7 @@
           <span>词库</span>
           <select id="unitSelect"></select>
         </label>
+        <button id="statsBtn" class="mode-btn" type="button">🏆 排行</button>
       </div>
 
       <div class="game-shell">
@@ -86,29 +87,31 @@
           </div>
 
           <div class="screen-wrap">
-            <canvas id="game" width="480" height="480"></canvas>
-            <div id="joyZone" class="joy-zone" aria-hidden="true"></div>
-            <div id="joyBase" class="joy-base">
-              <div id="joyThumb" class="joy-thumb"></div>
-            </div>
-            <div id="overlay" class="overlay">
-              <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
-              <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
-              <div class="player-row">
-                <label class="player-label" for="playerName">PLAYER</label>
-                <input
-                  id="playerName"
-                  class="player-input"
-                  type="text"
-                  maxlength="12"
-                  autocomplete="off"
-                  spellcheck="false"
-                  placeholder="输入你的名字"
-                />
+            <div id="screenFit" class="screen-fit">
+              <canvas id="game" width="480" height="480"></canvas>
+              <div id="joyZone" class="joy-zone" aria-hidden="true"></div>
+              <div id="joyBase" class="joy-base">
+                <div id="joyThumb" class="joy-thumb"></div>
               </div>
-              <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+              <div id="overlay" class="overlay">
+                <p id="overlayTitle" class="overlay-title">SUPER SNAKE</p>
+                <p id="overlayText" class="overlay-text">经典贪吃蛇</p>
+                <div class="player-row">
+                  <label class="player-label" for="playerName">PLAYER</label>
+                  <input
+                    id="playerName"
+                    class="player-input"
+                    type="text"
+                    maxlength="12"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="输入你的名字"
+                  />
+                </div>
+                <p id="overlayBlink" class="overlay-blink">PRESS START</p>
+              </div>
+              <div class="scanlines" aria-hidden="true"></div>
             </div>
-            <div class="scanlines" aria-hidden="true"></div>
           </div>
 
           <div class="buttons">
@@ -123,6 +126,14 @@
 
           <p class="hint">电脑请用 方向键 / WASD 控制 · 空格 暂停/开始</p>
         </div>
+      </div>
+
+    </div>
+
+    <div id="statsPanel" class="stats-panel" hidden>
+      <div class="stats-head">
+        <strong>🏆 排行榜 · 单词本</strong>
+        <button id="statsCloseBtn" class="stats-close" type="button">关闭</button>
       </div>
 
       <section class="board-card">

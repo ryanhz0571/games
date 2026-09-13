@@ -94,6 +94,10 @@ const wordSummaryEmpty = element<HTMLParagraphElement>("wordSummaryEmpty");
 const joyZone = element<HTMLDivElement>("joyZone");
 const joyBase = element<HTMLDivElement>("joyBase");
 const joyThumb = element<HTMLDivElement>("joyThumb");
+const screenFit = element<HTMLDivElement>("screenFit");
+const statsPanel = element<HTMLDivElement>("statsPanel");
+const statsBtn = element<HTMLButtonElement>("statsBtn");
+const statsCloseBtn = element<HTMLButtonElement>("statsCloseBtn");
 
 // ---------- 状态 ----------
 let snake: Point[] = [];
@@ -999,6 +1003,35 @@ joyZone.addEventListener(
   { passive: false },
 );
 
+// 让棋盘始终完整显示在当前屏幕内（不留滚动条）
+function fitScreen(): void {
+  const wrap = screenFit.parentElement;
+  if (!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  if (rect.width < 40 || rect.height < 40) return;
+  const size = Math.max(160, Math.floor(Math.min(rect.width, rect.height)));
+  screenFit.style.width = `${size}px`;
+  screenFit.style.height = `${size}px`;
+}
+
+window.addEventListener("resize", fitScreen);
+window.addEventListener("orientationchange", fitScreen);
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(() => fitScreen()).observe(screenFit.parentElement ?? screenFit);
+}
+
+statsBtn.addEventListener("click", () => {
+  statsPanel.hidden = false;
+});
+
+statsCloseBtn.addEventListener("click", () => {
+  statsPanel.hidden = true;
+});
+
+statsPanel.addEventListener("click", (event) => {
+  if (event.target === statsPanel) statsPanel.hidden = true;
+});
+
 // ---------- 按钮与输入 ----------
 startBtn.addEventListener("click", () => startRun());
 pauseBtn.addEventListener("click", () => togglePause());
@@ -1070,6 +1103,9 @@ function init(): void {
   reset();
   renderBoard();
   showStartIntro();
+  fitScreen();
+  window.requestAnimationFrame(() => fitScreen());
+  window.addEventListener("load", () => fitScreen());
 }
 
 const wellbeing = setupWellbeing({
