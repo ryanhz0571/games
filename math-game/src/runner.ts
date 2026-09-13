@@ -16,18 +16,20 @@ const XP_PER_CORRECT = 10;
 const XP_LESSON_BONUS = 20;
 const GEMS_PER_LESSON = 5;
 
-const RUN_INTERVAL_S = 5; // 跑多少秒后出下一题
+const RUN_INTERVAL_S = 2; // 两道题之间跑多久
 const QUESTION_TIME_S = 12; // 每题答题时间
+const CORRECT_DELAY_MS = 700; // 答对后的过场
+const WRONG_DELAY_MS = 900; // 答错后的过场
 const RUN_SPEED = 15; // 米/秒
 
 const START_GAP = 30; // 初始怪物距离（场景宽度的百分比）
 const MAX_GAP = 74;
 const CAUGHT_GAP = 5;
-const PUSH_ON_CORRECT = 9; // 答对把怪物甩开
-const APPROACH_ON_WRONG = 7; // 答错怪物逼近
+const PUSH_ON_CORRECT = 9;
+const APPROACH_ON_WRONG = 7;
 
-const JUMP_VELOCITY = 470; // 像素/秒
-const GRAVITY = 1500; // 像素/秒²
+const JUMP_VELOCITY = 470;
+const GRAVITY = 1500;
 
 // ---------- 运行时状态 ----------
 let hearts = MAX_HEARTS;
@@ -100,6 +102,17 @@ function threat(): number {
   return clamp((START_GAP - gap) / (START_GAP - CAUGHT_GAP), 0, 1);
 }
 
+function formatAnswer(q: Question): string {
+  switch (q.type) {
+    case "truefalse":
+      return q.answer === true ? "对" : "错";
+    case "order":
+      return (q.answer as string[]).join(" < ");
+    default:
+      return String(q.answer);
+  }
+}
+
 // ---------- 画布 ----------
 const stage = $(".runner-stage");
 const canvas = $<HTMLCanvasElement>("#gameCanvas");
@@ -133,6 +146,15 @@ function resize(): void {
   groundH = clamp(H * 0.24, 54, 150);
   groundY = H - groundH;
   charSize = clamp(H * 0.2, 38, 110);
+}
+
+// 任天堂风格：粗黑描边 + 平涂色块
+function outline(width: number): void {
+  ctx.strokeStyle = "#2b2b2b";
+  ctx.lineWidth = width;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
 }
 
 // ---------- 粒子 ----------
@@ -225,13 +247,14 @@ const CLOUDS: Cloud[] = [
 ];
 
 function drawCloud(x: number, y: number, r: number): void {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+  ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.arc(x, y, r * 0.6, 0, Math.PI * 2);
   ctx.arc(x + r * 0.7, y + r * 0.1, r * 0.5, 0, Math.PI * 2);
   ctx.arc(x - r * 0.7, y + r * 0.12, r * 0.45, 0, Math.PI * 2);
   ctx.arc(x + r * 0.1, y - r * 0.32, r * 0.42, 0, Math.PI * 2);
   ctx.fill();
+  outline(Math.max(2, r * 0.09));
 }
 
 function drawClouds(): void {
@@ -258,6 +281,7 @@ function drawSun(): void {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
+  outline(Math.max(2, r * 0.08));
 }
 
 function drawMountains(): void {
@@ -274,8 +298,9 @@ function drawMountains(): void {
     ctx.lineTo(x + step, baseY);
     ctx.closePath();
     ctx.fill();
+    outline(Math.max(2, H * 0.006));
 
-    ctx.fillStyle = "#e8f4ff";
+    ctx.fillStyle = "#eef7ff";
     ctx.beginPath();
     ctx.moveTo(x + step * 0.5, baseY - height);
     ctx.lineTo(x + step * 0.5 - step * 0.11, baseY - height * 0.66);
@@ -292,11 +317,14 @@ function drawHills(): void {
   const ry = clamp(H * 0.11, 30, 90);
   const offset = (((scrollX * 0.3) % step) + step) % step;
 
-  ctx.fillStyle = "#8ce39a";
   for (let x = -offset - step; x < W + step; x += step) {
+    ctx.fillStyle = "#8ce39a";
     ctx.beginPath();
     ctx.ellipse(x + step * 0.5, baseY, step * 0.62, ry, 0, Math.PI, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = "#2b2b2b";
+    ctx.lineWidth = Math.max(2, H * 0.005);
+    ctx.stroke();
   }
 }
 
@@ -332,6 +360,7 @@ function drawGround(): void {
 function drawNearLayer(): void {
   const step = 168;
   const offset = (((scrollX * 0.7) % step) + step) % step;
+  const ol = Math.max(2, H * 0.006);
 
   for (let x = -offset - step; x < W + step; x += step) {
     const r = 22;
@@ -339,14 +368,17 @@ function drawNearLayer(): void {
     ctx.beginPath();
     ctx.ellipse(x + 34, groundY - r * 0.7, r, r * 0.72, 0, 0, Math.PI * 2);
     ctx.fill();
+    outline(ol);
     ctx.beginPath();
     ctx.ellipse(x + 54, groundY - r * 0.5, r * 0.66, r * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
+    outline(ol);
 
     ctx.fillStyle = "#c9b79a";
     ctx.beginPath();
     ctx.ellipse(x + 120, groundY - 8, 13, 9, 0, 0, Math.PI * 2);
     ctx.fill();
+    outline(ol);
   }
 }
 
@@ -366,173 +398,224 @@ function drawSpeedLines(): void {
   }
 }
 
-// ---------- 角色 ----------
+// ---------- 主角（任天堂风格） ----------
 function drawFox(cx: number, feetY: number, size: number, running: boolean): void {
   const s = size;
   const airborne = jumpY > 0;
-  const bob = running && !airborne ? Math.sin(runPhase * 2) * s * 0.035 : 0;
+  const hop = running && !airborne ? Math.abs(Math.sin(runPhase * 2)) * s * 0.09 : 0;
+  const ol = Math.max(2, s * 0.05);
 
   ctx.save();
-  ctx.translate(cx, feetY + bob);
-  if (airborne) ctx.rotate(-0.16);
+  ctx.translate(cx, feetY + hop);
+  if (airborne) ctx.rotate(-0.12);
 
-  const bodyY = -s * 0.52;
+  const bodyY = -s * 0.5;
+
+  // 腿：先粗黑描边，再叠橙色
+  const hips = [-0.24, -0.04, 0.16, 0.32];
+  for (let pass = 0; pass < 2; pass += 1) {
+    ctx.lineCap = "round";
+    ctx.lineWidth = pass === 0 ? s * 0.2 : s * 0.1;
+    ctx.strokeStyle = pass === 0 ? "#2b2b2b" : "#ff9a3c";
+    for (let i = 0; i < hips.length; i += 1) {
+      const hipX = hips[i] * s;
+      const swing = airborne ? 0.7 : Math.sin(runPhase * 2.4 + i * 1.6) * 0.9;
+      const footX = hipX + swing * s * 0.18;
+      const footY = airborne ? bodyY + s * 0.22 : 0;
+      ctx.beginPath();
+      ctx.moveTo(hipX, bodyY + s * 0.2);
+      ctx.lineTo(footX, footY);
+      ctx.stroke();
+    }
+  }
 
   // 尾巴
   ctx.save();
   ctx.translate(-s * 0.4, bodyY - s * 0.02);
-  ctx.rotate(-0.45 + Math.sin(runPhase * 1.6) * 0.16);
-  ctx.fillStyle = "#ff8c42";
+  ctx.rotate(-0.5 + Math.sin(runPhase * 1.8) * 0.14);
   ctx.beginPath();
-  ctx.ellipse(-s * 0.3, 0, s * 0.36, s * 0.16, 0, 0, Math.PI * 2);
+  ctx.ellipse(-s * 0.36, 0, s * 0.42, s * 0.25, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff9a3c";
   ctx.fill();
-  ctx.fillStyle = "#fff3e0";
+  outline(ol);
   ctx.beginPath();
-  ctx.ellipse(-s * 0.56, 0, s * 0.14, s * 0.13, 0, 0, Math.PI * 2);
+  ctx.ellipse(-s * 0.68, 0, s * 0.17, s * 0.16, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff6ea";
   ctx.fill();
+  outline(ol);
   ctx.restore();
 
-  // 腿
-  ctx.strokeStyle = "#e2701f";
-  ctx.lineWidth = s * 0.1;
-  ctx.lineCap = "round";
-  const hipY = bodyY + s * 0.2;
-  const hips = [-0.3, -0.14, 0.14, 0.3];
-  for (let i = 0; i < hips.length; i += 1) {
-    const hipX = hips[i] * s;
-    const swing = airborne ? 0.6 : Math.sin(runPhase * 2.2 + i * 1.7) * 0.8;
-    const footX = hipX + swing * s * 0.2;
-    const footY = airborne ? bodyY + s * 0.2 : 0;
-    ctx.beginPath();
-    ctx.moveTo(hipX, hipY);
-    ctx.lineTo(footX, footY);
-    ctx.stroke();
-  }
-
   // 身体
-  ctx.fillStyle = "#ff8c42";
   ctx.beginPath();
-  ctx.ellipse(0, bodyY, s * 0.46, s * 0.32, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, bodyY, s * 0.44, s * 0.34, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff9a3c";
   ctx.fill();
-  ctx.fillStyle = "#fff3e0";
+  outline(ol);
   ctx.beginPath();
-  ctx.ellipse(0, bodyY + s * 0.13, s * 0.33, s * 0.16, 0, 0, Math.PI * 2);
+  ctx.ellipse(s * 0.06, bodyY + s * 0.13, s * 0.26, s * 0.17, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff6ea";
   ctx.fill();
+
+  // 耳朵
+  const headX = s * 0.46;
+  const headY = bodyY - s * 0.36;
+  ctx.beginPath();
+  ctx.moveTo(headX - s * 0.26, headY - s * 0.16);
+  ctx.lineTo(headX - s * 0.18, headY - s * 0.64);
+  ctx.lineTo(headX + s * 0.06, headY - s * 0.24);
+  ctx.closePath();
+  ctx.fillStyle = "#ff9a3c";
+  ctx.fill();
+  outline(ol);
+  ctx.beginPath();
+  ctx.moveTo(headX + s * 0.06, headY - s * 0.24);
+  ctx.lineTo(headX + s * 0.26, headY - s * 0.62);
+  ctx.lineTo(headX + s * 0.32, headY - s * 0.12);
+  ctx.closePath();
+  ctx.fill();
+  outline(ol);
 
   // 头
-  const headX = s * 0.44;
-  const headY = bodyY - s * 0.26;
-  ctx.fillStyle = "#e2701f";
   ctx.beginPath();
-  ctx.moveTo(headX - s * 0.14, headY - s * 0.16);
-  ctx.lineTo(headX - s * 0.02, headY - s * 0.44);
-  ctx.lineTo(headX + s * 0.1, headY - s * 0.14);
-  ctx.closePath();
+  ctx.arc(headX, headY, s * 0.37, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffab5e";
   ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(headX + s * 0.04, headY - s * 0.16);
-  ctx.lineTo(headX + s * 0.2, headY - s * 0.42);
-  ctx.lineTo(headX + s * 0.24, headY - s * 0.12);
-  ctx.closePath();
-  ctx.fill();
+  outline(ol);
 
-  ctx.fillStyle = "#ff9a52";
+  // 口鼻
   ctx.beginPath();
-  ctx.arc(headX, headY, s * 0.24, 0, Math.PI * 2);
+  ctx.ellipse(headX + s * 0.3, headY + s * 0.13, s * 0.2, s * 0.15, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff6ea";
   ctx.fill();
+  outline(ol);
 
-  ctx.fillStyle = "#fff3e0";
+  // 大眼睛
+  for (const ex of [headX + s * 0.04, headX + s * 0.32]) {
+    ctx.beginPath();
+    ctx.arc(ex, headY - s * 0.07, s * 0.12, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    outline(ol * 0.8);
+    ctx.beginPath();
+    ctx.arc(ex + s * 0.035, headY - s * 0.06, s * 0.06, 0, Math.PI * 2);
+    ctx.fillStyle = "#2b2b2b";
+    ctx.fill();
+  }
+
+  // 鼻子
   ctx.beginPath();
-  ctx.ellipse(headX + s * 0.17, headY + s * 0.07, s * 0.14, s * 0.1, 0, 0, Math.PI * 2);
-  ctx.fill();
-
+  ctx.arc(headX + s * 0.46, headY + s * 0.07, s * 0.065, 0, Math.PI * 2);
   ctx.fillStyle = "#2b2b2b";
-  ctx.beginPath();
-  ctx.arc(headX + s * 0.11, headY - s * 0.03, s * 0.038, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(headX + s * 0.3, headY + s * 0.06, s * 0.032, 0, Math.PI * 2);
   ctx.fill();
 
-  // 围巾
-  ctx.strokeStyle = "#e52521";
-  ctx.lineWidth = s * 0.09;
+  // 红围巾
   ctx.beginPath();
-  ctx.moveTo(headX - s * 0.16, headY + s * 0.18);
+  ctx.moveTo(headX - s * 0.26, headY + s * 0.22);
   ctx.quadraticCurveTo(
-    headX - s * 0.72,
-    headY + s * 0.06 + Math.sin(runPhase * 2) * s * 0.1,
-    headX - s * 1.02,
-    headY + s * 0.3 + Math.sin(runPhase * 2) * s * 0.18,
+    headX - s * 0.86,
+    headY + s * 0.08 + Math.sin(runPhase * 2) * s * 0.12,
+    headX - s * 1.16,
+    headY + s * 0.42 + Math.sin(runPhase * 2) * s * 0.2,
   );
+  ctx.lineCap = "round";
+  ctx.lineWidth = s * 0.15;
+  ctx.strokeStyle = "#2b2b2b";
+  ctx.stroke();
+  ctx.lineWidth = s * 0.08;
+  ctx.strokeStyle = "#e52521";
   ctx.stroke();
 
   ctx.restore();
 }
 
+// ---------- 怪物（任天堂风格） ----------
 function drawMonster(cx: number, feetY: number, size: number, danger: number): void {
-  const s = size * (1 + danger * 0.4);
+  const s = size * (1 + danger * 0.38);
   const bob = Math.sin(runPhase * 2.6) * s * 0.06;
+  const ol = Math.max(2, s * 0.05);
 
   ctx.save();
   ctx.translate(cx, feetY + bob);
 
-  // 触手
-  ctx.strokeStyle = "#6a2f9a";
-  ctx.lineWidth = s * 0.1;
-  ctx.lineCap = "round";
-  for (let i = 0; i < 5; i += 1) {
-    const t = i / 4 - 0.5;
-    const legX = t * s * 0.7;
-    const sway = Math.sin(runPhase * 3 + i) * s * 0.09;
+  // 脚
+  for (const dx of [-0.28, 0.28]) {
     ctx.beginPath();
-    ctx.moveTo(legX * 0.6, -s * 0.32);
-    ctx.quadraticCurveTo(legX + sway, -s * 0.12, legX + sway * 1.6, 0);
-    ctx.stroke();
+    ctx.ellipse(dx * s, -s * 0.07, s * 0.17, s * 0.1, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#4a2472";
+    ctx.fill();
+    outline(ol);
   }
 
   // 身体
-  const body = ctx.createRadialGradient(0, -s * 0.64, s * 0.1, 0, -s * 0.56, s * 0.62);
-  body.addColorStop(0, "#b877e6");
+  const body = ctx.createRadialGradient(
+    -s * 0.1,
+    -s * 0.82,
+    s * 0.08,
+    0,
+    -s * 0.6,
+    s * 0.66,
+  );
+  body.addColorStop(0, "#c489f0");
   body.addColorStop(1, "#7b2fb0");
-  ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.ellipse(0, -s * 0.56, s * 0.52, s * 0.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -s * 0.6, s * 0.54, s * 0.52, 0, 0, Math.PI * 2);
+  ctx.fillStyle = body;
   ctx.fill();
+  outline(ol);
 
-  // 眼睛
-  const eyeY = -s * 0.68;
-  for (const ex of [-s * 0.2, s * 0.2]) {
-    ctx.fillStyle = "#fff";
+  // 大眼睛
+  for (const ex of [-0.2, 0.2]) {
     ctx.beginPath();
-    ctx.arc(ex, eyeY, s * 0.13, 0, Math.PI * 2);
+    ctx.arc(ex * s, -s * 0.74, s * 0.17, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
-    ctx.fillStyle = "#e52521";
+    outline(ol * 0.8);
     ctx.beginPath();
-    ctx.arc(ex + s * 0.02, eyeY, s * 0.06, 0, Math.PI * 2);
+    ctx.arc(ex * s + s * 0.03, -s * 0.74, s * 0.075, 0, Math.PI * 2);
+    ctx.fillStyle = "#2b2b2b";
     ctx.fill();
   }
 
-  // 嘴巴和牙
-  ctx.strokeStyle = "#2b0f3a";
-  ctx.lineWidth = s * 0.05;
+  // 眉毛
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#2b2b2b";
+  ctx.lineWidth = s * 0.07;
   ctx.beginPath();
-  ctx.arc(0, -s * 0.52, s * 0.17, 0.12 * Math.PI, 0.88 * Math.PI);
+  ctx.moveTo(-s * 0.36, -s * 0.95);
+  ctx.lineTo(-s * 0.08, -s * 0.87);
+  ctx.moveTo(s * 0.36, -s * 0.95);
+  ctx.lineTo(s * 0.08, -s * 0.87);
   ctx.stroke();
-  ctx.fillStyle = "#fff";
-  for (const dx of [-0.06, 0.06]) {
+
+  // 嘴
+  ctx.beginPath();
+  ctx.arc(0, -s * 0.44, s * 0.2, 0.12 * Math.PI, 0.88 * Math.PI);
+  ctx.lineWidth = s * 0.07;
+  ctx.stroke();
+
+  // 牙
+  ctx.fillStyle = "#ffffff";
+  for (const dx of [-0.08, 0.08]) {
     ctx.beginPath();
-    ctx.moveTo(dx * s - s * 0.03, -s * 0.44);
-    ctx.lineTo(dx * s + s * 0.03, -s * 0.44);
-    ctx.lineTo(dx * s, -s * 0.37);
+    ctx.moveTo(dx * s - s * 0.035, -s * 0.36);
+    ctx.lineTo(dx * s + s * 0.035, -s * 0.36);
+    ctx.lineTo(dx * s, -s * 0.27);
     ctx.closePath();
     ctx.fill();
+    outline(ol * 0.6);
   }
 
   // 逼近时的红光
   if (danger > 0.4) {
     ctx.globalAlpha = (danger - 0.4) * 0.9;
-    const glow = ctx.createRadialGradient(0, -s * 0.56, s * 0.2, 0, -s * 0.56, s * 0.95);
+    const glow = ctx.createRadialGradient(
+      0,
+      -s * 0.56,
+      s * 0.2,
+      0,
+      -s * 0.56,
+      s * 0.95,
+    );
     glow.addColorStop(0, "rgba(255, 70, 70, 0.65)");
     glow.addColorStop(1, "rgba(255, 70, 70, 0)");
     ctx.fillStyle = glow;
@@ -547,8 +630,8 @@ function drawMonster(cx: number, feetY: number, size: number, danger: number): v
 
 function foxCenter(): { x: number; y: number } {
   const feetY = groundY + 10;
-  const bob = jumpY > 0 ? 0 : Math.sin(runPhase * 2) * charSize * 0.035;
-  return { x: W * 0.5, y: feetY - jumpY + bob - charSize * 0.55 };
+  const hop = jumpY > 0 ? 0 : Math.abs(Math.sin(runPhase * 2)) * charSize * 0.09;
+  return { x: W * 0.5, y: feetY - jumpY - hop - charSize * 0.55 };
 }
 
 function drawCharacters(): void {
@@ -557,13 +640,12 @@ function drawCharacters(): void {
   const monsterX = foxX - (gap / 100) * W;
   const running = phase === "run" && !wellbeing.isResting();
 
-  // 影子
   ctx.fillStyle = "rgba(0, 0, 0, 0.16)";
   ctx.beginPath();
-  ctx.ellipse(foxX, feetY, charSize * 0.4, charSize * 0.1, 0, 0, Math.PI * 2);
+  ctx.ellipse(foxX, feetY, charSize * 0.42, charSize * 0.1, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.ellipse(monsterX, feetY, charSize * 0.36, charSize * 0.09, 0, 0, Math.PI * 2);
+  ctx.ellipse(monsterX, feetY, charSize * 0.38, charSize * 0.09, 0, 0, Math.PI * 2);
   ctx.fill();
 
   drawMonster(monsterX, feetY, charSize * 0.95, threat());
@@ -636,7 +718,7 @@ function updateNextLabel(): void {
     const left = Math.max(0, RUN_INTERVAL_S - runElapsed / 1000);
     label.textContent = `下一题 ${Math.ceil(left)} 秒`;
   } else if (phase === "quiz") {
-    label.textContent = "答题中…";
+    label.textContent = locked ? "下一题…" : "答题中…";
   } else {
     label.textContent = "";
   }
@@ -933,6 +1015,20 @@ function submitAnswer(): void {
   }
 }
 
+// 答完一题后，最多 3 秒（过场 + 跑动）就出下一题
+function scheduleAdvance(delayMs: number): void {
+  window.setTimeout(() => {
+    if (phase !== "quiz") return;
+    if (questionIndex >= questions.length) {
+      victory();
+    } else {
+      phase = "run";
+      runElapsed = 0;
+      locked = false;
+    }
+  }, delayMs);
+}
+
 function onCorrect(q: Question): void {
   locked = true;
   combo += 1;
@@ -959,21 +1055,12 @@ function onCorrect(q: Question): void {
   renderMeters();
   $("#questionModal").hidden = true;
   const prefix = combo > 1 ? `✓ 连击 x${combo}！` : "✓ 答对了！";
-  showToast(`${prefix}${q.explain}`, "correct", 2200);
-
-  window.setTimeout(() => {
-    if (phase !== "quiz") return;
-    if (questionIndex >= questions.length) {
-      victory();
-    } else {
-      phase = "run";
-      runElapsed = 0;
-      locked = false;
-    }
-  }, 900);
+  showToast(`${prefix}${q.explain}`, "correct", 1800);
+  scheduleAdvance(CORRECT_DELAY_MS);
 }
 
 function onWrong(q: Question): void {
+  locked = true;
   combo = 0;
   hearts -= 1;
   gap = Math.max(0, gap - APPROACH_ON_WRONG);
@@ -990,6 +1077,7 @@ function onWrong(q: Question): void {
     gravity: 1100,
   });
 
+  questionIndex += 1;
   renderStats();
   renderMeters();
 
@@ -998,10 +1086,9 @@ function onWrong(q: Question): void {
     return;
   }
 
-  showToast(`🤔 ${q.hint}`, "wrong", 2400);
-  quizTimeLeft = QUESTION_TIME_S;
-  updateQuizCountdown();
-  locked = false;
+  $("#questionModal").hidden = true;
+  showToast(`❌ 正确答案：${formatAnswer(q)} · ${q.explain}`, "wrong", 2400);
+  scheduleAdvance(WRONG_DELAY_MS);
 }
 
 function handleTimeout(): void {
@@ -1244,11 +1331,7 @@ function init(): void {
     card.append(back);
     showOverlay(card);
   } else if (findLessonById(lessonId)) {
-    showToast(
-      `开始跑酷！每 ${RUN_INTERVAL_S} 秒一道题，答对甩开怪物`,
-      undefined,
-      3200,
-    );
+    showToast("开始跑酷！答对甩开怪物，答错会被追上", undefined, 3000);
   }
 
   window.requestAnimationFrame(frame);
