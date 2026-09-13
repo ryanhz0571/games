@@ -30,9 +30,10 @@
 
 进入游戏后默认是 **单词闯关模式**：题目给出中文意思，画面上三种颜色的食物对应 A/B/C 三个英文选项，把蛇引向正确颜色的单词即可得分。
 
-- 词库按人教版（2024 版）七年级上册单元分档：Hello!、You and Me、We're Family、My School、Favourite Subject、Fun Clubs、A Day in the Life、Happy Birthday!
+- 词库按人教版（2024 版）七年级上册单元分档：Starter 1 Hello!、Starter 2 Keep Tidy!、Starter 3 Welcome!、Unit 1 You and Me、Unit 2 We're Family!、Unit 3 My School、Unit 4 My Favourite Subject、Unit 5 Fun Clubs、Unit 6 A Day in the Life、Unit 7 Happy Birthday!，共 10 个单元、约 190 个核心词汇
 - 答对 +20 分（重复巩固 +10 分），自动播放标准发音
 - 答错不结束游戏，只扣 5 分并立刻给出中英对照讲解
+- 每个单词答对 2 次记为“已掌握”，面板里可以展开查看本单元完整单词表和掌握进度
 - 每局结束会生成“本局单词本”，点击单词可反复听发音
 - 可随时切回经典苹果模式，排行榜两种模式共用
 

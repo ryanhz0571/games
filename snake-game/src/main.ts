@@ -16,6 +16,7 @@ import {
   type EnglishWord,
   type WordUnit,
 } from "./word-data";
+import { progressKey, WordProgress } from "./word-progress";
 
 // ---------- 配置 ----------
 const GRID = 20; // 网格 20 x 20
@@ -85,6 +86,8 @@ const promptZh = element<HTMLSpanElement>("promptZh");
 const wordTimer = element<HTMLSpanElement>("wordTimer");
 const choiceRow = element<HTMLDivElement>("choiceRow");
 const wordHint = element<HTMLParagraphElement>("wordHint");
+const wordList = element<HTMLUListElement>("wordList");
+const wordListProgress = element<HTMLSpanElement>("wordListProgress");
 const wordSummaryCard = element<HTMLElement>("wordSummaryCard");
 const wordSummaryList = element<HTMLUListElement>("wordSummaryList");
 const wordSummaryEmpty = element<HTMLParagraphElement>("wordSummaryEmpty");
@@ -109,6 +112,7 @@ let muted = readStorage("superSnakeMuted") === "1";
 let audioCtx: AudioContext | null = null;
 let gameMode: GameMode = "word";
 let selectedUnitId = "starter-1";
+let progress = new WordProgress(progressKey(selectedUnitId));
 let wordFoods: WordFood[] = [];
 let wordWave: WordWave | null = null;
 let sessionWords: EnglishWord[] = [];
@@ -220,6 +224,35 @@ const sfx = {
 // ---------- 单词学习工具 ----------
 function currentUnit(): WordUnit {
   return getUnit(selectedUnitId);
+}
+
+function buildWordQueue(unit: WordUnit): EnglishWord[] {
+  const pending = unit.words.filter((item) => !progress.isMastered(item.word));
+  const mastered = unit.words.filter((item) => progress.isMastered(item.word));
+  return [...shuffle(pending), ...shuffle(mastered)];
+}
+
+function renderWordList(): void {
+  const unit = currentUnit();
+  wordList.replaceChildren();
+  wordListProgress.textContent = `${progress.masteredCount(unit.words)}/${unit.words.length}`;
+
+  unit.words.forEach((item) => {
+    const row = document.createElement("li");
+    if (progress.isMastered(item.word)) row.classList.add("mastered");
+
+    const en = document.createElement("span");
+    en.className = "en";
+    en.textContent = item.word;
+
+    const zh = document.createElement("span");
+    zh.className = "zh";
+    zh.textContent = item.zh;
+
+    row.append(en, zh);
+    row.addEventListener("click", () => speakEnglish(item.word));
+    wordList.append(row);
+  });
 }
 
 function speakEnglish(text: string): void {
@@ -335,6 +368,8 @@ function onWordTimeout(): void {
   if (!running || paused || gameOver || gameMode !== "word") return;
   stopCountdown();
   if (wordWave) {
+    progress.record(wordWave.target.word, false);
+    renderWordList();
     flashWordHint(
       `时间到！${wordWave.target.word} = ${wordWave.target.zh}`,
       true,
@@ -354,7 +389,7 @@ function startWordWave(): boolean {
   if (unit.words.length < 3) return false;
 
   if (wordQueue.length === 0) {
-    wordQueue = shuffle(unit.words);
+    wordQueue = buildWordQueue(unit);
     if (
       lastWord &&
       wordQueue.length > 1 &&
@@ -487,9 +522,11 @@ function tick(): void {
   } else if (wordHit !== null) {
     wordFoods.splice(wordHitIndex, 1);
     if (isTargetWordFood(wordHit)) {
+      const alreadyMastered = progress.isMastered(wordHit.word.word);
       const firstTime = !sessionWords.some(
         (learned) => learned.word === wordHit.word.word,
       );
+      progress.record(wordHit.word.word, true);
       if (firstTime) {
         sessionWords.push(wordHit.word);
         score += 20;
@@ -507,11 +544,17 @@ function tick(): void {
         gameOverRun();
         return;
       }
+      renderWordList();
+      if (!alreadyMastered && progress.isMastered(wordHit.word.word)) {
+        flashWordHint(`${wordHit.word.word} = ${wordHit.word.zh} ✓ 已掌握`);
+      }
     } else {
       shrinkSnakeBy(2);
       score = Math.max(0, score - 5);
+      progress.record(wordHit.word.word, false);
       sfx.wrong();
       flashWordHint(`${wordHit.word.word} = ${wordHit.word.zh}`, true);
+      renderWordList();
     }
   } else {
     snake.pop();
@@ -544,9 +587,10 @@ function gameOverRun(): void {
   renderBoard();
   renderWordSummary();
   draw();
+  const unit = currentUnit();
   const wordsLearned =
-    gameMode === "word" && sessionWords.length > 0
-      ? `\n本局掌握 ${sessionWords.length} 个单词`
+    gameMode === "word"
+      ? `\n本局学会 ${sessionWords.length} 个单词\n本单元已掌握 ${progress.masteredCount(unit.words)}/${unit.words.length}`
       : "";
   showOverlay(
     "GAME OVER",
@@ -984,6 +1028,8 @@ modeWordBtn.addEventListener("click", () => switchGameMode("word"));
 modeClassicBtn.addEventListener("click", () => switchGameMode("classic"));
 unitSelect.addEventListener("change", () => {
   selectedUnitId = unitSelect.value;
+  progress = new WordProgress(progressKey(selectedUnitId));
+  renderWordList();
 });
 
 document.querySelectorAll<HTMLButtonElement>(".dpad-btn").forEach((button) => {
@@ -1008,7 +1054,7 @@ function populateUnitSelect(): void {
   WORD_UNITS.forEach((unit) => {
     const option = document.createElement("option");
     option.value = unit.id;
-    option.textContent = unit.label;
+    option.textContent = `${unit.label}（${unit.words.length} 词）`;
     unitSelect.append(option);
   });
   unitSelect.value = selectedUnitId;
@@ -1020,6 +1066,7 @@ function init(): void {
   soundBtn.textContent = muted ? "SOUND OFF" : "SOUND ON";
   playerNameInput.value = loadPlayerName();
   updateModeUI();
+  renderWordList();
   reset();
   renderBoard();
   showStartIntro();

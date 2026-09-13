@@ -439,7 +439,7 @@ canvas {
 
 .word-q-text {
   color: #fff;
-  font-size: clamp(12px, 4vw, 17px);
+  font-size: clamp(16px, 5vw, 22px);
   letter-spacing: 1px;
 }
 
@@ -466,13 +466,14 @@ canvas {
   align-items: center;
   gap: 9px;
   min-width: 0;
-  font-family: inherit;
-  font-size: 11px;
+  font-family: "Segoe UI", "PingFang SC", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
   color: #fff;
-  background: #121a2b;
-  border: 2px solid #57534c;
-  border-radius: 7px;
-  padding: 11px 10px;
+  background: #16203a;
+  border: 2px solid #6b7690;
+  border-radius: 9px;
+  padding: 13px 12px;
   cursor: pointer;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
@@ -494,7 +495,73 @@ canvas {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.3px;
+}
+
+.word-book {
+  margin-top: 10px;
+  color: #fff;
+  font-size: 10px;
+}
+
+.word-book summary {
+  cursor: pointer;
+  color: var(--yellow);
+  list-style: none;
+  padding: 8px 2px;
+}
+
+.word-book summary::-webkit-details-marker {
+  display: none;
+}
+
+.word-book-progress {
+  float: right;
+  color: #fff;
+}
+
+.word-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.word-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  background: #16203a;
+  border: 1px solid #3c465e;
+  border-radius: 7px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.word-list li.mastered {
+  border-color: var(--green);
+}
+
+.word-list .en {
+  font-family: "Segoe UI", "PingFang SC", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.word-list li.mastered .en::after {
+  content: " ✓";
+  color: var(--green);
+}
+
+.word-list .zh {
+  font-size: 12px;
+  color: #b9c6d8;
+  text-align: right;
 }
 
 .word-hint-tip {
