@@ -1,0 +1,299 @@
+/* 数字大陆：跑酷数学挑战专用样式 */
+
+.runner-body {
+  overflow: hidden;
+}
+
+.runner-app {
+  max-width: 1200px;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.runner-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #7cc4ff 0%, #bde8ff 72%, #eef9ff 100%);
+  touch-action: none;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.runner-progress {
+  height: auto;
+  overflow: visible;
+  border-radius: 0;
+  margin: 6px 18px;
+  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55))
+    bottom / 100% 12px no-repeat;
+}
+
+.progress-caption {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 2px 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.28);
+}
+
+.danger-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mario-red), var(--coin));
+  transition: width 0.12s linear;
+}
+
+.question-card-runner.shake {
+  animation: shake 0.35s ease;
+}
+
+.jump-btn:disabled {
+  opacity: 0.45;
+}
+
+.next-question {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+.jump-btn {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 76px;
+  height: 76px;
+  border: 3px solid var(--ink);
+  border-bottom-width: 6px;
+  border-radius: 50%;
+  background: var(--mario-red);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jump-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* ---------- 答题浮层 ---------- */
+.question-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(30, 30, 60, 0.48);
+  animation: pop-in 0.18s ease both;
+}
+
+.question-card-runner {
+  width: min(720px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  text-align: left;
+  box-shadow: 0 14px 0 rgba(0, 0, 0, 0.2);
+}
+
+.question-meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.question-countdown {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--mario-red);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.question-body {
+  margin-top: 18px;
+}
+
+.runner-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.runner-choice {
+  min-height: 62px;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+  transition: transform 0.06s ease, background 0.12s ease;
+}
+
+.runner-choice:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+  background: var(--coin);
+}
+
+.runner-input-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.runner-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+  padding: 8px 16px;
+  border: 2px solid var(--ink);
+  border-bottom-width: 5px;
+  border-radius: 14px;
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+}
+
+.runner-input:focus {
+  border-color: var(--mario-red);
+}
+
+.runner-submit {
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 62px;
+  border: 2px solid var(--mario-red-dark);
+  border-bottom-width: 5px;
+  border-radius: 14px;
+  background: var(--mario-red);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.runner-submit:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- 轻提示 ---------- */
+.toast {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  z-index: 90;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 9px 0 rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.correct {
+  border-color: var(--pipe-green-dark);
+}
+
+.toast.wrong {
+  border-color: var(--mario-red);
+}
+
+/* ---------- 手机竖屏优化 ---------- */
+@media (max-width: 640px) {
+  .hud-level {
+    display: none;
+  }
+
+  .next-question {
+    top: 8px;
+    font-size: 12px;
+  }
+
+  .jump-btn {
+    right: 12px;
+    bottom: 12px;
+    width: 62px;
+    height: 62px;
+    font-size: 19px;
+  }
+
+  .runner-choices {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .runner-choice,
+  .runner-submit,
+  .runner-input {
+    min-height: 54px;
+    font-size: 18px;
+  }
+
+  .question-card-runner {
+    padding: 20px 16px;
+  }
+
+  .question-prompt {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 430px) {
+  .hud-world {
+    display: none;
+  }
+}

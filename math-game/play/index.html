@@ -14,7 +14,7 @@
     </style>
     <meta
       name="description"
-      content="数字大陆 · 第一课 认识负数"
+      content="数字大陆 · 跑酷数学挑战：躲避障碍，答对题目甩开怪物。"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -30,17 +30,14 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../style.css" />
-    <title>数字大陆 · 第 1 课 · 认识负数</title>
+    <link rel="stylesheet" href="../runner.css" />
+    <title>数字大陆 · 跑酷数学挑战</title>
   </head>
-  <body>
-    <div class="cloud cloud-1" aria-hidden="true"></div>
-    <div class="cloud cloud-2" aria-hidden="true"></div>
-    <div class="ground" aria-hidden="true"></div>
-
-    <div class="app">
+  <body class="runner-body">
+    <div class="app runner-app">
       <header class="hud">
         <a class="hud-back" href="../" aria-label="返回数字大陆">←</a>
-        <div class="hud-world">WORLD <span>1-1</span></div>
+        <div class="hud-world">WORLD <span>RUN</span></div>
         <div class="hud-stat hud-streak" title="连续打卡天数">
           <span class="hud-icon">🔥</span>
           <span id="streak">0</span>
@@ -50,6 +47,10 @@
           <span id="hearts">5</span>
         </div>
         <div class="hud-spacer"></div>
+        <div class="hud-stat hud-level" title="等级">
+          <span class="hud-icon">🏅</span>
+          <span id="level">Lv.1</span>
+        </div>
         <div class="hud-stat hud-score" title="得分">
           <span class="hud-icon">⭐</span>
           <span id="xp">0</span>
@@ -60,23 +61,36 @@
         </div>
       </header>
 
-      <div class="progress" aria-hidden="true">
-        <div id="progressBar" class="progress-bar"></div>
+      <div class="progress runner-progress" aria-hidden="true">
+        <div class="progress-caption">
+          <span>跑酷距离</span>
+          <span id="distance">0 m</span>
+        </div>
+        <div id="dangerBar" class="progress-bar danger-bar"></div>
       </div>
 
-      <main class="lesson">
-        <p id="lessonTitle" class="lesson-title">第 1 课 · 认识负数</p>
-        <div id="lesson" class="lesson-body"></div>
+      <main class="runner-stage">
+        <canvas id="gameCanvas" aria-label="跑酷游戏画面"></canvas>
+        <div id="nextQuestion" class="next-question">下一题 3 秒</div>
+        <button id="jumpBtn" class="jump-btn" type="button" aria-label="跳跃">
+          跳
+        </button>
       </main>
-
-      <footer class="controls">
-        <button id="submitBtn" class="btn-primary" type="button">检查 ✓</button>
-      </footer>
     </div>
 
-    <div id="feedback" class="feedback" hidden></div>
+    <div id="questionModal" class="question-modal" hidden>
+      <div class="question-card question-card-runner">
+        <div class="question-meta">
+          <span class="question-countdown" id="questionCountdown">12 秒</span>
+        </div>
+        <h2 id="questionPrompt" class="question-prompt"></h2>
+        <div id="questionBody" class="question-body"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
     <div id="overlay" class="overlay" hidden></div>
 
-    <script type="module" src="../src/main.ts"></script>
+    <script type="module" src="../src/runner.ts"></script>
   </body>
 </html>
